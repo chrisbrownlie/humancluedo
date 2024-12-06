@@ -1,0 +1,4 @@
+^renv$
+^renv\.lock$
+^humancluedo\.Rproj$
+^\.Rproj\.user$
