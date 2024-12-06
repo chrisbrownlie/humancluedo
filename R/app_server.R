@@ -2,6 +2,8 @@
 #' @export
 app_server <- function(input, output, session) {
 
+  if (!length(pkg_file("hc-db.duckdb"))) create_database()
+
   game_state <- GameState$new()
 
   # Existing game

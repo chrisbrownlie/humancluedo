@@ -4,7 +4,7 @@
 #' @export
 db_conn <- function() {
   DBI::dbConnect(duckdb::duckdb(),
-                 dbdir = pkg_file("inst", "hc-db.duckdb"))
+                 dbdir = pkg_file("hc-db.duckdb"))
 }
 
 #' Create database tables if they don't already exist

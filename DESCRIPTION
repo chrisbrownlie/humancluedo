@@ -2,14 +2,29 @@ Package: humancluedo
 Title: Human Cluedo
 Version: 0.0.0.9000
 Authors@R: 
-    person("Chris", "Brownlie", , "chris.brownlie@hotmail.co.uk", role = "ctb")
+    person("Chris", "Brownlie", , "chris.brownlie@hotmail.co.uk", role = "cre")
 Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Imports: 
+    bsicons,
     bslib,
+    cli,
+    clipr,
+    cookies,
+    DBI,
     devtools,
-    shiny
+    duckdb,
+    duckplyr,
+    fs,
+    glue,
+    lubridate,
+    purrr,
+    R6,
+    shiny,
+    shinyalert,
+    shinyjs,
+    stringr,
+    tibble
