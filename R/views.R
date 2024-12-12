@@ -1,12 +1,17 @@
 #' Update the game status ui based on
 update_game_status_ui <- function(state) {
   # Remove existing status info and insert new state
+  update_game_details(state)
+  update_player_status(state)
+  update_game_link(state)
+
+  return(invisible(NULL))
+}
+
+#' Update basic game details like the name and the active player
+update_game_details <- function(state) {
   shiny::removeUI("#gamename")
   shiny::removeUI("#activeplayer")
-  shiny::removeUI("#activecontract")
-  shiny::removeUI("#playerstatus")
-  shiny::removeUI("#game_performance")
-  shiny::removeUI("#game_link")
   shiny::insertUI(
     "#confirm_kill",
     card_title("Human Cluedo -", tags$b(state$active_game_name), id = "gamename"),
@@ -17,7 +22,47 @@ update_game_status_ui <- function(state) {
     p("You are:", tags$b(state$active_player_name), id = "activeplayer"),
     where = "beforeBegin"
   )
+}
 
+#' Update the current players status
+update_player_status <- function(state) {
+  shiny::removeUI("#activecontract")
+  shiny::removeUI("#playerstatus")
+  shiny::removeUI("#game_performance")
+  shiny::removeUI("#playerstatus_start")
+  players <- collect(state$players)
+  if (state$get_game_status() == "awaiting") {
+    shiny::insertUI(
+      "#confirm_kill",
+      div(
+        id = "activecontract",
+        p("The game has not yet started, once all players have joined, you will",
+          "see your contract appear here."),
+        p("These are the other players in your game:"),
+        tags$ul(
+          purrr::map2(
+            players$player[players$player != state$active_player_name],
+            players$identifier[players$player != state$active_player_name],
+            \(name, id) {
+              tags$li(
+                p(name, if_else(is.na(id), "(yet to join)", "(joined)")),
+                class = if_else(is.na(id), "text-red", "text-green")
+              )
+            }
+          )
+        )
+      ),
+      where = "beforeBegin"
+
+    )
+    shinyjs::hide("confirm_kill")
+    return(invisible(NULL))
+  }
+  shiny::insertUI(
+    "#game_status",
+    p("Current player status:", id = "playerstatus_start"),
+    where = "beforeEnd"
+  )
   performance <- state$get_performance()
 
   if (isTRUE(performance$is_alive)) {
@@ -62,9 +107,18 @@ update_game_status_ui <- function(state) {
     tags$div(
       id = "playerstatus",
       state$get_player_status(as_html = TRUE)
-      ),
+    ),
     where = "afterEnd"
   )
+
+  shinyjs::toggleState("confirm_kill",
+                       condition = state$target_is_alive())
+}
+
+#' Update the game link
+update_game_link <- function(state) {
+
+  shiny::removeUI("#game_link")
 
   shiny::insertUI(
     "#playerstatus",
@@ -79,12 +133,7 @@ update_game_status_ui <- function(state) {
     ),
     where = "afterEnd"
   )
-
-  shinyjs::toggleState("confirm_kill",
-                       condition = state$target_is_alive())
-  return(invisible(NULL))
 }
-
 
 show_invalid_game_id <- function() {
   shinyjs::hide("game_status")
@@ -98,7 +147,7 @@ show_invalid_game_id <- function() {
 #' @param game_state a GameState object to use to populate game information
 #' @param game_id optional game ID. If left NULL, will use the currently active
 #' game in the supplied game_state
-launch_a_game <- function(game_state, game_id = NULL) {
+launch_a_game <- function(game_state, existing_cookie, game_id = NULL) {
   shinyjs::hide("create_game")
   shinyjs::hide("invalid_game")
   shinyjs::show("game_status")
@@ -108,6 +157,7 @@ launch_a_game <- function(game_state, game_id = NULL) {
     game_id <- game_state$active_game
   }
   game_exists <- game_state$initialise_game(game_id)
+  game_state$set_active_player(existing_cookie)
 
   # If link is invalid, show message and exit observer
   if (!game_exists) {
@@ -115,33 +165,16 @@ launch_a_game <- function(game_state, game_id = NULL) {
     return(NULL)
   }
 
-  game_state$set_player(
-    cookies::get_cookie(cookie_name = "player_id",
-                        missing = NULL)
-  )
-
-  # If new player, show popup to select name
+  # If new player, show popup to select name and maybe enter items
   if (length(game_state$active_player_name) == 0) {
-    players <- collect(game_state$players)
-    showModal(
-      modalDialog(
-        title = stringr::str_c("Welcome to ",
-                               game_state$active_game_name),
-        p("Select your name below to begin."),
-        p("The following players have already joined the game: ",
-          stringr::str_flatten_comma(
-            players$player[!is.na(players$identifier)],
-            last = " and ")
-        ),
-        radioButtons(
-          "selected_player",
-          "Your name is:",
-          choices = players$player[is.na(players$identifier)]
-        ),
-        footer = actionButton("confirm", "Confirm")
-      )
-    )
+    showModal(player_join_modal(game_state))
   } else {
+    # If waiting for players, check if this is the last player to join.
+    # If so, set the contracts so the game can begin
+    if (game_state$get_game_status() == "awaiting" &&
+        sum(is.na(pull(game_state$players, identifier))) == 0) {
+      game_state$set_contracts()
+    }
     update_game_status_ui(game_state)
   }
 }

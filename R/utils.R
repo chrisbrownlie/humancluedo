@@ -4,9 +4,6 @@
 #'
 #' @export
 pkg_file <- function(...) {
-  path <- fs::as_fs_path(find.package("humancluedo")) |>
-    fs::path("inst", ...)
-  if (!fs::file_exists(path)) fs::file_create(path)
   fs::path_package(
     package = "humancluedo",
     ...
@@ -19,11 +16,13 @@ pkg_file <- function(...) {
 #'
 #' @return a multi-element character vector, split by comma
 #' @export
-csl_to_vec <- function(csl) {
-  csl |>
+csl_to_vec <- function(csl, remove_empty = TRUE) {
+  v <- csl |>
     strsplit(",") |>
     purrr::pluck(1) |>
     trimws()
+  if (!remove_empty) return(v)
+  v[v != ""]
 }
 
 

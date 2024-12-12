@@ -4,7 +4,7 @@
 \alias{csl_to_vec}
 \title{Convert a comma-separated list to a vector}
 \usage{
-csl_to_vec(csl)
+csl_to_vec(csl, remove_empty = TRUE)
 }
 \arguments{
 \item{csl}{a comma-separated list as a single-length character vector}

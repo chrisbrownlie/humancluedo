@@ -1,9 +1,13 @@
 #' App server
+#'
+#' @param input app input
+#' @param output app output
+#' @param session app session
+#'
 #' @export
 app_server <- function(input, output, session) {
 
-  if (!length(pkg_file("hc-db.duckdb"))) create_database()
-
+  # Create new game state
   game_state <- GameState$new()
 
   # Existing game
@@ -15,36 +19,65 @@ app_server <- function(input, output, session) {
 
     # If existing game, switch to existing game mode
     if (!is.null(game_id)) {
-      game_state <- launch_a_game(game_state, game_id)
+      game_state <- launch_a_game(
+        game_state = game_state,
+        game_id = game_id,
+        existing_cookie = cookies::get_cookie("player_id",
+                                              missing = session$token)
+      )
     }
   })
 
   # Once player selection has been confirmed
   observe({
     print("SETTING COOKIE")
+    # Set cookie and active player identifier using session ID
     cookies::set_cookie(
       "player_id",
       session$token
     )
-    set_player_id(id = session$token,
-                  player = input$selected_player,
-                  game_id = game_state$active_game,
-                  conn = game_state$conn)
-    # Refresh tables
-    game_state$initialise_game(game_state$active_game)
-    game_state$set_player(session$token)
+    game_state$set_active_player(
+      session$token,
+      player = input$selected_player
+    )
+
+    # Add item and location if necessary
+    if (pull(game_state$details, population_method) == "players") {
+      game_state$add_location(input$location_obj_pop,
+                              generated_by = input$selected_player)
+      game_state$add_item(input$item_obj_pop,
+                          generated_by = input$selected_player)
+    }
+
+    # If waiting for players, check if this is the last player to join.
+    # If so, set the contracts so the game can begin
+    if (game_state$get_game_status() == "awaiting" &&
+        sum(is.na(pull(game_state$players, identifier))) == 0) {
+      game_state$set_contracts()
+    }
 
     # update UI
     update_game_status_ui(game_state)
     cli::cli_alert_success("Added identifier for {input$selected_player}")
     removeModal()
   }) |>
-    bindEvent(input$confirm)
+    bindEvent(input$confirm_join)
+
+  # If join game modal is showing item/location population, don't allow
+  # confirming until the items are entered.
+  observe({
+    req(!is.null(input$item_obj_pop))
+    if (input$item_obj_pop == "" | input$location_obj_pop == "") {
+      shinyjs::disable("confirm_join")
+    } else{
+      shinyjs::enable("confirm_join")
+    }
+  })
 
   # Kill confirmation
   observe({
     shinyalert::shinyalert(
-      "Are you sure you want to confirm the kill? This can't be undone!",
+      "Are you sure you want to confirm the kill?",
       showCancelButton = TRUE,
       cancelButtonText = "Cancel",
       showConfirmButton = TRUE,
@@ -62,22 +95,7 @@ app_server <- function(input, output, session) {
   # Creating new game
   observe({
     showModal(
-      modalDialog(
-        tags$i("Create a game of human cluedo"),
-        p("Enter a comma-separated list for all the below"),
-        p("Names of players e.g. 'John, Jack, Sarah'. Note that the first player entered will be the admin."),
-        textInput("players", "Players:"),
-        p("Items for contracts. Should make sense following the word 'with', e.g. 'a spoon, an apple, a colander'"),
-        textInput("items", "Items:"),
-        p("Locations for contracts. Should make sense following an item or player, e.g. 'in the bedroom, next to the bbq, while touching a door'"),
-        textInput("locations", "Locations:"),
-        uiOutput("validation_ui"),
-        textInput("game_name", "Game name:"),
-        actionButton("generate_random", "Generate random name"),
-        footer = actionButton("create_new",
-                               "Confirm") |>
-          shinyjs::disabled()
-      )
+      create_game_modal()
     )
   }) |>
     bindEvent(input$create)
@@ -86,7 +104,21 @@ app_server <- function(input, output, session) {
     updateTextInput(inputId = "game_name", value = generate_game_name(length(csl_to_vec(input$players))))
   })
 
+  # Validation for creating new game
+  observe({
+    req(input$obj_pop_method)
+    # Show admin entry options if selected
+    shinyjs::toggle("admin_entry_objs",
+                    condition = input$obj_pop_method == "admin")
+    if (input$obj_pop_method != "admin") {
+      shinyjs::toggleState("create_new",
+                           condition = input$players != "")
+    }
+  })
+
+  # Validation UI for admin entry population method
   output$validation_ui <- renderUI({
+    req(input$obj_pop_method == "admin")
     req(input$players)
     req(input$items)
     req(input$locations)
@@ -126,13 +158,32 @@ app_server <- function(input, output, session) {
     removeModal()
     # Clean inputs
     player_vec <- csl_to_vec(input$players)
-    game_state <- create_a_game(game_state = game_state,
-                                players = player_vec,
-                                items = csl_to_vec(input$items),
-                                locations = csl_to_vec(input$locations),
-                                admin = first(player_vec),
-                                game_name = input$name)
-    launch_a_game(game_state)
+    game_state$create_game(players = player_vec,
+                           game_name = input$name,
+                           win_condition = input$win_condition,
+                           obj_pop_method = input$obj_pop_method)
+
+    if (input$obj_pop_method == "auto") {
+      # Auto generate
+      items <- generate_items(n = length(player_vec))
+      for (item in items) game_state$add_item(item, generated_by = "admin")
+
+      items <- generate_locations(n = length(player_vec))
+      for (location in locations) game_state$add_location(location, generated_by = "admin")
+
+
+    } else if (input$obj_pop_method == "admin") {
+      # Use admin supplied values
+      items <- csl_to_vec(input$items)
+      for (item in items) game_state$add_item(item, generated_by = "admin")
+
+      locations <- csl_to_vec(input$locations)
+      for (location in locations) game_state$add_location(location, generated_by = "admin")
+
+      game_state$set_contracts()
+    }
+
+    launch_a_game(game_state, existing_cookie = cookies::get_cookie("player_id", missing = session$token))
   }) |>
     bindEvent(input$create_new)
 

@@ -26,8 +26,7 @@ app_ui <- function() {
       p("You are: [active player]", id = "activeplayer"),
       p("You are trying to kill [target player] with [item]", id = "activecontract"),
       p(id = "game_performance"),
-      actionButton("confirm_kill", "Confirm kill!"),
-      p("Current player status:", id = "playerstatus_start")
+      actionButton("confirm_kill", "Confirm kill!")
     ) |>
       shinyjs::hidden(),
 

@@ -31,7 +31,37 @@ generate_game_name <- function(n = NULL) {
     stringr::str_to_title()
 }
 
-test_game_id <- "000db5ed-752a-4e25-8788-c3cb59f8d70d"
+generate_items <- function(n) {
+  vals <- c(
+    "a pen", "a spoon", "a fork", "a knife", "a plate", "a cup", "an apple", "a book", "a toothbrush", "a comb",
+    "a remote control", "a phone charger", "a pair of scissors", "a notepad", "a light bulb", "a key", "a candle",
+    "a battery", "a tissue", "an empty bottle", "a pencil", "an eraser", "a ruler", "a paperclip", "a stapler", "a lighter",
+    "a toothbrush holder", "a hairbrush", "a bar of soap", "a sponge", "a tea bag", "a handful of salt",
+    "a bottle of shampoo", "a towel", "a clock", "a coaster", "a mug", "nail clippers", "a screwdriver",
+    "a packet of tissues", "a pair of tweezers", "a wallet", "a coin", "a rubber band", "a pair of headphones",
+    "a USB drive", "a charger cable", "a soap dispenser", "a pepper grinder", "a packet of matches"
+  )
+  if (n > length(vals)) return(sample(vals, n, replace = TRUE))
+  sample(vals, n)
+}
+
+generate_locations <- function(n) {
+  vals <- c(
+    "in the kitchen", "in the living room", "in the bathroom", "in a bedroom", "in a hallway", "in the dining room",
+    "in the laundry room", "in the attic", "in the basement", "in the garage", "on the patio", "in the backyard",
+    "on the front porch", "in the guest room", "in the entryway", "on the balcony", "in the walk-in closet", "on the staircase landing",
+    "in the study", "in the foyer",
+
+    "while touching a door", "next to a table", "next to any light switch", "while holding a railing or banister",
+    "next to an open cupboard", "next to an open drawer",
+    "on a rug", "next to an oven or bbq",
+    "while sitting in a chair", "while standing on a doormat", "while touching a brick wall",
+    "underneath a light or chandelier",
+    "next to a mirror", "next to a heater or radiator", "while standing on grass or mud"
+  )
+  if (n > length(vals)) return(sample(vals, n, replace = TRUE))
+  sample(vals, n)
+}
 
 
 clean_game <- function() {
@@ -58,27 +88,4 @@ clean_game <- function() {
   )
 
   clipr::write_clip(new$active_game)
-}
-
-
-create_a_game <- function(game_state, players, items, locations, admin, game_name) {
-
-  # Generate random contracts
-  players <- sample(players, length(players))
-  items <- sample(items, length(items))
-  locations <- sample(locations, length(locations))
-  targets <- c(players[length(players)], players[1:(length(players)-1)])
-
-  contracts <- tibble::tibble(
-    player = players,
-    item = items,
-    location = locations,
-    target = targets
-  )
-
-  random_name <- generate_game_name(n = length(players))
-  if (length(game_name) == 0) game_name <- random_name
-  if (game_name == "") game_name <- random_name
-
-  game_state$create_game(contracts, game_name, admin_player = admin)
 }
