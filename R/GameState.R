@@ -26,8 +26,16 @@ GameState <- R6::R6Class(
     #' @field items a duckplyr tibble indicating items in the game
     items = tibble::tibble(),
 
+    #' @field locations a duckplyr tibble indicating locations in the game
+    locations = tibble::tibble(),
+
     #' @field contracts a duckplyr tibble indicating game contracts
     contracts = tibble::tibble(),
+
+    #' @field details a one-row duckplyr tibble indicating the metadata for
+    #' the game, including the win condition (duel or spree) and object
+    #' population method (auto, admin, players)
+    details = tibble::tibble(),
 
     #' @description
     #' Create a new game state
@@ -41,6 +49,9 @@ GameState <- R6::R6Class(
 
       self$conn <- conn
 
+      # Create database if it doesn't exist
+      create_database(conn = conn)
+
       if (!is.null(game_id)) {
         self$initialise_game(game_id)
       }
@@ -53,11 +64,12 @@ GameState <- R6::R6Class(
     #' @param game_id the ID of the game to use to populate the object
     initialise_game = function(game_id) {
 
-      game <- self$conn |>
+      self$details <- self$conn |>
         dplyr::tbl("games") |>
         filter(.data$game_id == .env$game_id,
-               active) |>
-        collect()
+               active)
+
+      game <- collect(self$details)
 
       if (NROW(game) == 0) {
         cli::cli_alert_warning("Game {.val {game_id}} not found")
@@ -73,6 +85,14 @@ GameState <- R6::R6Class(
 
       self$players <- self$conn |>
         dplyr::tbl("players") |>
+        filter(.data$game_id == .env$game_id)
+
+      self$items <- self$conn |>
+        dplyr::tbl("items") |>
+        filter(.data$game_id == .env$game_id)
+
+      self$locations <- self$conn |>
+        dplyr::tbl("locations") |>
         filter(.data$game_id == .env$game_id)
 
       self$contracts <- self$conn |>
@@ -91,26 +111,39 @@ GameState <- R6::R6Class(
 
     #' Create a new game from a tibble of contracts
     #'
-    #' @param contracts a tibble of contracts for the game
+    #' @param players a character vector of unique player names. The first of these
+    #' will be the admin.
     #' @param game_name a name for the new game
-    create_game = function(contracts, game_name, admin_player) {
+    #' @param win_condition the win condition for the game (duel or spree)
+    #' @param obj_pop_method the object population method for the game (auto,
+    #' admin or players)
+    create_game = function(players,
+                           game_name,
+                           win_condition = c("duel", "spree"),
+                           obj_pop_method = c("players", "auto", "admin")) {
 
-      if (!setequal(names(contracts), c("player", "item", "location", "target"))) {
-        cli::cli_abort("Contracts in unknown structure")
-      }
-      if (length(setdiff(contracts$player, contracts$target))) {
-        cli::cli_abort("Players and targets do not match")
-      }
-      if (any(is.na(contracts))) {
-        cli::cli_abort("Missing values in contracts")
+      win_condition <- rlang::arg_match(win_condition)
+      obj_pop_method <- rlang::arg_match(obj_pop_method)
+
+      if (!is.character(players) || length(players) < 2) {
+        cli::cli_abort("Must have at least two players")
       }
 
       new_game_id <- uuid::UUIDgenerate()
       self$active_game <- new_game_id
 
       # If no name, generate
+      generated_name <- generate_game_name(n = length(players))
       if (missing(game_name)) {
-        game_name <- generate_game_name(n = NROW(contracts))
+        game_name <- generated_name
+        cli::cli_alert_info("No game name supplied, generated as {.val {game_name}}")
+      }
+      if (length(game_name) == 0) {
+        game_name <- generated_name
+        cli::cli_alert_info("No game name supplied, generated as {.val {game_name}}")
+      }
+      if (game_name == "") {
+        game_name <- generated_name
         cli::cli_alert_info("No game name supplied, generated as {.val {game_name}}")
       }
 
@@ -118,35 +151,150 @@ GameState <- R6::R6Class(
       tibble::tibble(
         game_id = new_game_id,
         name = game_name,
-        active = TRUE
+        active = TRUE,
+        win_condition = win_condition,
+        population_method = obj_pop_method
       ) |>
-        DBI::dbAppendTable(conn = self$conn,
-                           name = "games",
-                           value = _)
+        duckdb::dbAppendTable(conn = self$conn,
+                              name = "games",
+                              value = _)
 
       # Add players
-      contracts |>
+      admin_col <- players==players[1]
+      players |>
         as_duckplyr_tibble() |>
-        select(player) |>
+        rename(player = 1) |>
         mutate(game_id = new_game_id,
                alive = TRUE,
-               is_admin = .data$player == admin_player) |>
-        DBI::dbAppendTable(conn = self$conn,
-                           name = "players",
-                           value = _)
+               is_admin = admin_col) |>
+        select(game_id, player, alive, is_admin) |>
+        duckdb::dbAppendTable(conn = self$conn,
+                              name = "players",
+                              value = _)
       cli::cli_alert_success("Players added for new game {.val {new_game_id}}")
+
+      invisible(self)
+    },
+
+    #' Add an item to the current game
+    #' @param item the name of the item
+    #' @param generated_by who or what the item was generated by
+    add_item = function(item, generated_by) {
+      if (!self$is_initialised()) cli::cli_abort("Initialise or create game first")
+      tibble::tibble(
+        game_id = self$active_game,
+        item = item,
+        generated_by = generated_by
+      ) |>
+        duckdb::dbAppendTable(
+          conn = self$conn,
+          name = "items"
+        )
+    },
+    #' Remove an item from the current game
+    #' @param item the item to remove
+    remove_item = function(item) {
+      if (!self$is_initialised()) cli::cli_abort("Initialise or create game first")
+      self$conn |>
+        duckdb::dbSendQuery(
+          glue::glue_sql(
+            "DELETE FROM items WHERE game_id = {self$active_game} AND item = {item}",
+            .con = self$conn
+          )
+        )
+    },
+
+    #' Add a location to the current game
+    #' @param location the name of the location
+    #' @param generated_by who or what the location was generated by
+    add_location = function(location, generated_by) {
+      if (!self$is_initialised()) cli::cli_abort("Initialise or create game first")
+      tibble::tibble(
+        game_id = self$active_game,
+        location = location,
+        generated_by = generated_by
+      ) |>
+        duckdb::dbAppendTable(
+          conn = self$conn,
+          name = "locations"
+        )
+    },
+    #' Remove a location from the current game
+    #' @param location the location to remove
+    remove_location = function(location) {
+      if (!self$is_initialised()) cli::cli_abort("Initialise or create game first")
+      self$conn |>
+        duckdb::dbSendQuery(
+          glue::glue_sql(
+            "DELETE FROM locations WHERE game_id = {self$active_game} AND location = {location}",
+            .con = self$conn
+          )
+        )
+    },
+
+    #' @description
+    #' Use the games players, items and locations to set kill contracts.
+    #' Done in such a way that you won't kill someone who is trying to kill you
+    #' until the end of the game.
+    set_contracts = function() {
+      if (!self$is_initialised()) cli::cli_abort("Initialise or create game first")
+
+      players <- self$players |>
+        pull(player)
+      items <- self$items |>
+        pull(item)
+      locations <- collect(self$locations) |>
+        pull(location)
+
+      if (length(items) != length(players)) {
+        cli::cli_abort("There are {length(players)} players but {length(items)} items, there must be the same number of each.")
+      }
+      if (length(locations) != length(players)) {
+        cli::cli_abort("There are {length(players)} players but {length(locations)} locations, there must be the same number of each.")
+      }
+
+      # Invalidate any existing contracts
+      existing_contracts <- self$contracts |>
+        filter(active) |>
+        tally() |>
+        pull(n)
+      if (existing_contracts > 0) {
+        cli::cli_alert_warning("Invalidating {existing_contracts} existing active contracts")
+        duckdb::dbSendQuery(
+          self$conn,
+          glue::glue_sql(
+            "
+            UPDATE contracts
+            SET active = {FALSE}, execution_notes = 'Overwritten by setting new contracts'
+            WHERE game_id = {self$active_game} AND active = {TRUE}
+            ",
+            .con = self$conn
+          )
+        )
+      }
+
+      # Generate random contracts
+      players <- sample(players, length(players))
+      items <- sample(items, length(items))
+      locations <- sample(locations, length(locations))
+      targets <- c(players[length(players)], players[1:(length(players)-1)])
+
+      contracts <- tibble::tibble(
+        player = players,
+        item = items,
+        location = locations,
+        target = targets
+      )
 
       # Add contracts
       contracts |>
-        as_duckplyr_tibble() |>
-        mutate(game_id = new_game_id,
+        mutate(game_id = self$active_game,
                active = TRUE) |>
-        DBI::dbAppendTable(conn = self$conn,
-                           name = "contracts",
-                           value = _)
-      cli::cli_alert_success("Contracts added for new game {.val {new_game_id}}")
+        duckdb::dbAppendTable(conn = self$conn,
+                              name = "contracts",
+                              value = _)
+      cli::cli_alert_success("New contracts set for game {.val {self$active_game}}")
 
-      invisible(self)
     },
 
     #' @description Has a game been initialised?
@@ -181,6 +329,7 @@ GameState <- R6::R6Class(
         pull(location)
     },
 
+    #' @description Return TRUE if the current player is alive, FALSE otherwise
     is_alive = function() {
       if (!self$is_initialised()) return(FALSE)
       self$players |>
@@ -199,11 +348,14 @@ GameState <- R6::R6Class(
     },
 
     #' @description Confirm a kill
-    confirm_kill = function(notes = "") {
+    #' @param execution_time the time of execution
+    #' @param notes any notes to add to the contract after completing
+    confirm_kill = function(execution_time = lubridate::now(),
+                            notes = "") {
 
       target <- self$get_target()
       # Mark player as dead
-      DBI::dbExecute(
+      duckdb::dbSendQuery(
         self$conn,
         glue::glue_sql(
           "
@@ -240,7 +392,7 @@ GameState <- R6::R6Class(
         )
 
       # Mark both previous contracts as no longer active
-      DBI::dbExecute(
+      duckdb::dbSendQuery(
         self$conn,
         glue::glue_sql(
           "
@@ -253,12 +405,12 @@ GameState <- R6::R6Class(
         )
       )
       cli::cli_alert_success("{target}'s contract marked as inactive")
-      DBI::dbExecute(
+      duckdb::dbSendQuery(
         self$conn,
         glue::glue_sql(
           "
         UPDATE contracts
-        SET active = {FALSE}, execution_time = {lubridate::now()}, execution_notes = {notes}
+        SET active = {FALSE}, execution_time = {execution_time}, execution_notes = {notes}
         WHERE target = {target}
         AND game_id = {self$active_game}
         ",
@@ -273,6 +425,9 @@ GameState <- R6::R6Class(
     },
 
     #' @description Get the status of all other players
+    #' @param as_html if TRUE, will return a HTML list of player statuses,
+    #' if FALSE (the default) will return a two column tibble of player name
+    #' and status
     get_player_status = function(as_html = FALSE) {
       if (!self$is_initialised()) return("")
       ps <- self$players |>
@@ -345,13 +500,51 @@ GameState <- R6::R6Class(
     },
 
     #' Set the active player
-    set_player = function(id) {
+    #' @param id the identifier of the current player
+    #' @param player the name of the current player. If missing, it
+    #' is assumed that id will match to an existing player and in that
+    #' case this method will set the active player name and ID.
+    set_active_player = function(id, player) {
+
       if (!self$is_initialised()) return(invisible(NULL))
       if (is.null(id)) return(invisible(NULL))
+
       self$active_player <- id
-      self$active_player_name <- self$players |>
-        filter(identifier == id) |>
-        pull(player)
+
+      # If just setting the active player name (i.e. it
+      # is an existing game/player), don't alter the table
+      if (missing(player)) {
+        self$active_player_name <- self$players |>
+          filter(identifier == id) |>
+          pull(player)
+        return(invisible(self))
+      }
+
+      self$active_player_name <- player
+
+      # If setting the ID for a player, update the table
+      duckdb::dbSendQuery(
+        self$conn,
+        glue::glue_sql(
+          "
+          UPDATE players
+          SET identifier = {id}
+          WHERE player = {player}
+          AND game_id = {self$active_game}
+          ",
+          .con = self$conn
+        )
+      )
+    },
+
+    #' @description Helper to determine whether the game is waiting for players to join or not
+    get_game_status = function() {
+      if (!self$is_initialised()) return("uninitialised")
+      if ((pull(self$details, population_method) == "players") &&
+          NROW(collect(self$contracts)) == 0) {
+        return("awaiting")
+      }
+      return("in progress")
     }
 
   )

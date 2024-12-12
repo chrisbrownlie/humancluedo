@@ -4,7 +4,7 @@
 \alias{launch_a_game}
 \title{Show a game view in the app}
 \usage{
-launch_a_game(game_state, game_id = NULL)
+launch_a_game(game_state, existing_cookie, game_id = NULL)
 }
 \arguments{
 \item{game_state}{a GameState object to use to populate game information}
