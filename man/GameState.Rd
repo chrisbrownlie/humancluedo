@@ -27,7 +27,13 @@ in the active game}
 
 \item{\code{items}}{a duckplyr tibble indicating items in the game}
 
+\item{\code{locations}}{a duckplyr tibble indicating locations in the game}
+
 \item{\code{contracts}}{a duckplyr tibble indicating game contracts}
+
+\item{\code{details}}{a one-row duckplyr tibble indicating the metadata for
+the game, including the win condition (duel or spree) and object
+population method (auto, admin, players)}
 }
 \if{html}{\out{</div>}}
 }
@@ -37,6 +43,11 @@ in the active game}
 \item \href{#method-GameState-new}{\code{GameState$new()}}
 \item \href{#method-GameState-initialise_game}{\code{GameState$initialise_game()}}
 \item \href{#method-GameState-create_game}{\code{GameState$create_game()}}
+\item \href{#method-GameState-add_item}{\code{GameState$add_item()}}
+\item \href{#method-GameState-remove_item}{\code{GameState$remove_item()}}
+\item \href{#method-GameState-add_location}{\code{GameState$add_location()}}
+\item \href{#method-GameState-remove_location}{\code{GameState$remove_location()}}
+\item \href{#method-GameState-set_contracts}{\code{GameState$set_contracts()}}
 \item \href{#method-GameState-is_initialised}{\code{GameState$is_initialised()}}
 \item \href{#method-GameState-get_target}{\code{GameState$get_target()}}
 \item \href{#method-GameState-get_item}{\code{GameState$get_item()}}
@@ -95,18 +106,77 @@ Create a new game from a tibble of contracts}
 \if{latex}{\out{\hypertarget{method-GameState-create_game}{}}}
 \subsection{Method \code{create_game()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{GameState$create_game(contracts, game_name, admin_player)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{GameState$create_game(
+  players,
+  game_name,
+  win_condition = c("duel", "spree"),
+  obj_pop_method = c("auto", "admin", "players")
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{contracts}}{a tibble of contracts for the game}
+\item{\code{players}}{a character vector of unique player names. The first of these
+will be the admin.}
 
 \item{\code{game_name}}{a name for the new game}
+
+\item{\code{win_condition}}{the win condition for the game (duel or spree)}
+
+\item{\code{obj_pop_method}}{the object population method for the game (auto,
+admin or players)
+Use the games players, items and locations to set kill contracts.
+Done in such a way that you won't kill someone who is trying to kill you
+until the end of the game.}
 }
 \if{html}{\out{</div>}}
 }
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-GameState-add_item"></a>}}
+\if{latex}{\out{\hypertarget{method-GameState-add_item}{}}}
+\subsection{Method \code{add_item()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{GameState$add_item(item)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-GameState-remove_item"></a>}}
+\if{latex}{\out{\hypertarget{method-GameState-remove_item}{}}}
+\subsection{Method \code{remove_item()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{GameState$remove_item(item)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-GameState-add_location"></a>}}
+\if{latex}{\out{\hypertarget{method-GameState-add_location}{}}}
+\subsection{Method \code{add_location()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{GameState$add_location(location, generated_by)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-GameState-remove_location"></a>}}
+\if{latex}{\out{\hypertarget{method-GameState-remove_location}{}}}
+\subsection{Method \code{remove_location()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{GameState$remove_location(location)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-GameState-set_contracts"></a>}}
+\if{latex}{\out{\hypertarget{method-GameState-set_contracts}{}}}
+\subsection{Method \code{set_contracts()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{GameState$set_contracts()}\if{html}{\out{</div>}}
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-GameState-is_initialised"></a>}}

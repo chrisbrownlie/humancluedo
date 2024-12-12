@@ -3,16 +3,15 @@
 #' @param ... passed onto fs::path_package
 #'
 #' @export
-pkg_file_strict <- function(...) {
+pkg_file <- function(...) {
+  path <- fs::as_fs_path(find.package("humancluedo")) |>
+    fs::path("inst", ...)
+  if (!fs::file_exists(path)) fs::file_create(path)
   fs::path_package(
     package = "humancluedo",
     ...
   )
 }
-pkg_file <- purrr::possibly(
-  pkg_file_strict,
-  otherwise = fs::path()
-)
 
 #' Convert a comma-separated list to a vector
 #'

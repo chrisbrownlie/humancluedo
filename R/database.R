@@ -19,7 +19,9 @@ create_database <- function(conn = db_conn()) {
     tibble::tibble(
       game_id = character(),
       name = character(),
-      active = logical()
+      active = logical(),
+      win_condition = character(),
+      population_method = character()
     ) |>
       DBI::dbWriteTable(
         conn = conn,
@@ -45,6 +47,36 @@ create_database <- function(conn = db_conn()) {
     cli::cli_alert_success("Created [players]")
   } else {
     cli::cli_alert_info("[players] already exists")
+  }
+
+  if (!DBI::dbExistsTable(conn, "items")) {
+    tibble::tibble(
+      game_id = character(),
+      item = character(),
+      generated_by = character()
+    ) |>
+      DBI::dbWriteTable(
+        conn = conn,
+        name = "items"
+      )
+    cli::cli_alert_success("Created [items]")
+  } else {
+    cli::cli_alert_info("[items] already exists")
+  }
+
+  if (!DBI::dbExistsTable(conn, "locations")) {
+    tibble::tibble(
+      game_id = character(),
+      location = character(),
+      generated_by = character()
+    ) |>
+      DBI::dbWriteTable(
+        conn = conn,
+        name = "locations"
+      )
+    cli::cli_alert_success("Created [locations]")
+  } else {
+    cli::cli_alert_info("[locations] already exists")
   }
 
   if (!DBI::dbExistsTable(conn, "contracts")) {
