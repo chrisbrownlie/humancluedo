@@ -121,7 +121,7 @@ update_game_link <- function(state) {
   shiny::removeUI("#game_link")
 
   shiny::insertUI(
-    "#playerstatus",
+    "#game_status",
     tags$div(
       id = "game_link",
       actionButton("game_link",
@@ -131,7 +131,7 @@ update_game_link <- function(state) {
                    ),
                    icon = NULL)
     ),
-    where = "afterEnd"
+    where = "beforeEnd"
   )
 }
 
