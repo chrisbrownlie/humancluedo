@@ -194,4 +194,21 @@ app_server <- function(input, output, session) {
     )
   })
 
+
+  # Testing
+  output$url_parsing <- renderUI({
+    req(session$clientData$url_search)
+    query <- parseQueryString(session$clientData$url_search)
+    p(paste(names(query), query, sep = "=", collapse=", "))
+  })
+
+  output$db_location <- renderUI({
+    req(game_state)
+    div(
+      p(paste0("db location: ", game_state$conn@driver@dbdir)),
+      p(paste0("config location: ", paste(game_state$conn@driver@config, collapse = ", "))),
+      p("Tables: ", paste(duckdb::dbListTables(game_state$conn), collapse = ", "))
+    )
+  })
+
 }

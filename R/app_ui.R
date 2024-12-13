@@ -48,6 +48,19 @@ app_ui <- function() {
       card_body(
         actionButton("create", "Create new game!")
       )
+    ),
+
+
+    card(
+      fill = FALSE,
+      min_height = "300px",
+      id = "testing",
+      card_title("Testing"),
+      card_body(
+        uiOutput("url_parsing"),
+        hr(),
+        uiOutput("db_location")
+      )
     )
   ) |>
     cookies::add_cookie_handlers()
