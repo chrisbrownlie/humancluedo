@@ -9,7 +9,7 @@ RUN echo "options(renv.config.pak.enabled = TRUE, repos = c(CRAN = 'https://pack
 RUN R -e 'install.packages("remotes")'
 RUN R -e 'remotes::install_version("renv", version = "1.0.11")'
 COPY renv.lock renv.lock
-RUN R -e 'renv::restore(repos = "https://packagemanager.posit.co/cran/__linux__/focal/latest")'
+RUN R -e 'renv::restore(repos = c("CRAN" = "https://packagemanager.posit.co/cran/__linux__/focal/latest"))'
 
 
 EXPOSE 3838
