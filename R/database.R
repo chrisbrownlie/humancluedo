@@ -3,9 +3,9 @@
 #' @return a connection object
 #' @export
 db_conn <- function() {
-  dbpath <- "hc-db.duckdb"
+  dbpath <- fs::path("data-store", "hc-db.duckdb")
   if (!shiny::isRunning()) {
-    dbpath <- fs::path("inst", "app", "hc-db.duckdb")
+    dbpath <- fs::path("inst", "app", "data-store", "hc-db.duckdb")
   }
   DBI::dbConnect(
     duckdb::duckdb(),
