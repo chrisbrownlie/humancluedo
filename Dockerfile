@@ -22,4 +22,4 @@ COPY DESCRIPTION /src/DESCRIPTION
 COPY NAMESPACE /src/NAMESPACE
 
 WORKDIR /src/
-CMD Rscript app.R
+CMD Rscript app.R &> /src/inst/app/data-store/output.txt

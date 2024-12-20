@@ -26,3 +26,13 @@ jobs:
         with:
           push: true
           tags: christopherbrownlie/humancluedo:latest
+
+      - name: Pull new image on DigitalOcean droplet
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: 138.68.150.73
+          username: ghactions
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          passphrase: ${{ secrets.PASSPHRASE }}
+          script: |
+            docker pull christopherbrownlie/humancluedo:latest

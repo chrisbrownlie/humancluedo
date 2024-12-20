@@ -2,3 +2,4 @@
 /inst/app/*.duckdb
 *.duckdb
 *.duckdb.wal
+.Rhistory
