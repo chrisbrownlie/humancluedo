@@ -1173,6 +1173,17 @@
       ],
       "Hash": "5f5a7629f956619d519205ec475fe647"
     },
+    "sqids": {
+      "Package": "sqids",
+      "Version": "0.1.0",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "sqids-r",
+      "RemoteUsername": "sqids",
+      "RemoteSha": "44f77214c33155a0ec8ec17639e3b22290b83039",
+      "Hash": "1df4cfe036641043f468f460eb493a8f"
+    },
     "stringi": {
       "Package": "stringi",
       "Version": "1.8.4",

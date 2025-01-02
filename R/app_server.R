@@ -199,7 +199,8 @@ app_server <- function(input, output, session) {
   output$url_parsing <- renderUI({
     req(session$clientData$url_search)
     query <- parseQueryString(session$clientData$url_search)
-    p(paste(names(query), query, sep = "=", collapse=", "))
+    #p(paste(names(query), query, sep = "=", collapse=", "))
+    p(session$clientData$url_hash)
   })
 
   output$db_location <- renderUI({

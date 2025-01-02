@@ -68,7 +68,7 @@ update_player_status <- function(state) {
   if (performance$is_alive) {
     shiny::insertUI(
       "#confirm_kill",
-      p("You are trying to kill",
+      p("Your current mission is to kill",
         tags$b(state$get_target()),
         "with",
         tags$b(state$get_item()),
@@ -177,4 +177,7 @@ launch_a_game <- function(game_state, existing_cookie, game_id = NULL) {
     }
     update_game_status_ui(game_state)
   }
+
+  # Update query string
+  updateQueryString(paste0("?game=", game_id), mode = "replace")
 }

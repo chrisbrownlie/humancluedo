@@ -129,7 +129,7 @@ GameState <- R6::R6Class(
         cli::cli_abort("Must have at least two players")
       }
 
-      new_game_id <- uuid::UUIDgenerate()
+      new_game_id <- sqids::encode(as.numeric(Sys.time()) + runif(1,1,1000000), options=sqids::sqids_options(min_length = 8))
       self$active_game <- new_game_id
 
       # If no name, generate
@@ -374,7 +374,10 @@ GameState <- R6::R6Class(
 
       if (pull(count((target_contract))) != 1) cli::cli_abort("Something went wrong adding new contract")
 
-      if (pull(target_contract, target) == self$active_player_name) cli::cli_abort("Deal with this issue")
+      if (pull(target_contract, target) == self$active_player_name) {
+        # Win condition
+        cli::cli_abort("Deal with this issue")
+      }
 
       cli::cli_alert_success("New contract added - killing {pull(target_contract, target)}")
 
@@ -442,7 +445,7 @@ GameState <- R6::R6Class(
                       tags$li(
                         tags$b(player),
                         "is",
-                        tags$b(ifelse(state, "alive", "dead"))
+                        tags$b(ifelse(state, "alive", "dead"), class = ifelse(state, "text-green", "text-red"))
                       )
                     })
       )
@@ -473,9 +476,19 @@ GameState <- R6::R6Class(
             purrr::pmap(kills,
                         \(...) {
                           kill <- list(...)
+                          et <- kill$execution_time |>
+                            lubridate::ymd_hms()
+                          days_ago <- lubridate::today()-lubridate::date(et)
+                          if (days_ago == 0) {
+                            ex_date <- "today!"
+                          } else if (days_ago == 1) {
+                            ex_date <- "yesterday!"
+                          } else {
+                            ex_date <- paste0("on ", format(et, format="%A%e %b %Y!"))
+                          }
                           tags$li(
                             "Killed", tags$b(kill$target), "with", tags$b(kill$item), "-", tags$b(kill$location), " at ",
-                            format(kill$execution_time, "%R"), "on", format(kill$execution_time, "%d-%m-%Y")
+                            format(et, format = "%R %Z"), ex_date
                           )
                         })
           )
