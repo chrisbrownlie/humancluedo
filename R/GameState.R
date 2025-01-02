@@ -20,19 +20,19 @@ GameState <- R6::R6Class(
     #' in the active game
     active_player_name = character(),
 
-    #' @field players a duckplyr tibble indicating game players and status
+    #' @field players a lazy tibble indicating game players and status
     players = tibble::tibble(),
 
-    #' @field items a duckplyr tibble indicating items in the game
+    #' @field items a lazy tibble indicating items in the game
     items = tibble::tibble(),
 
-    #' @field locations a duckplyr tibble indicating locations in the game
+    #' @field locations a lazy tibble indicating locations in the game
     locations = tibble::tibble(),
 
-    #' @field contracts a duckplyr tibble indicating game contracts
+    #' @field contracts a lazy tibble indicating game contracts
     contracts = tibble::tibble(),
 
-    #' @field details a one-row duckplyr tibble indicating the metadata for
+    #' @field details a one-row lazy tibble indicating the metadata for
     #' the game, including the win condition (duel or spree) and object
     #' population method (auto, admin, players)
     details = tibble::tibble(),
@@ -155,20 +155,18 @@ GameState <- R6::R6Class(
         win_condition = win_condition,
         population_method = obj_pop_method
       ) |>
-        duckdb::dbAppendTable(conn = self$conn,
+        dbAppendTable(conn = self$conn,
                               name = "games",
                               value = _)
 
       # Add players
       admin_col <- players==players[1]
-      players |>
-        as_duckplyr_tibble() |>
-        rename(player = 1) |>
+      tibble::tibble(player = players) |>
         mutate(game_id = new_game_id,
                alive = TRUE,
                is_admin = admin_col) |>
         select(game_id, player, alive, is_admin) |>
-        duckdb::dbAppendTable(conn = self$conn,
+        dbAppendTable(conn = self$conn,
                               name = "players",
                               value = _)
       cli::cli_alert_success("Players added for new game {.val {new_game_id}}")
@@ -186,7 +184,7 @@ GameState <- R6::R6Class(
         item = item,
         generated_by = generated_by
       ) |>
-        duckdb::dbAppendTable(
+        dbAppendTable(
           conn = self$conn,
           name = "items"
         )
@@ -196,7 +194,7 @@ GameState <- R6::R6Class(
     remove_item = function(item) {
       if (!self$is_initialised()) cli::cli_abort("Initialise or create game first")
       self$conn |>
-        duckdb::dbSendQuery(
+        dbSendQuery(
           glue::glue_sql(
             "DELETE FROM items WHERE game_id = {self$active_game} AND item = {item}",
             .con = self$conn
@@ -214,7 +212,7 @@ GameState <- R6::R6Class(
         location = location,
         generated_by = generated_by
       ) |>
-        duckdb::dbAppendTable(
+        dbAppendTable(
           conn = self$conn,
           name = "locations"
         )
@@ -224,7 +222,7 @@ GameState <- R6::R6Class(
     remove_location = function(location) {
       if (!self$is_initialised()) cli::cli_abort("Initialise or create game first")
       self$conn |>
-        duckdb::dbSendQuery(
+        dbSendQuery(
           glue::glue_sql(
             "DELETE FROM locations WHERE game_id = {self$active_game} AND location = {location}",
             .con = self$conn
@@ -260,7 +258,7 @@ GameState <- R6::R6Class(
         pull(n)
       if (existing_contracts > 0) {
         cli::cli_alert_warning("Invalidating {existing_contracts} existing active contracts")
-        duckdb::dbSendQuery(
+        dbSendQuery(
           self$conn,
           glue::glue_sql(
             "
@@ -290,7 +288,7 @@ GameState <- R6::R6Class(
       contracts |>
         mutate(game_id = self$active_game,
                active = TRUE) |>
-        duckdb::dbAppendTable(conn = self$conn,
+        dbAppendTable(conn = self$conn,
                               name = "contracts",
                               value = _)
       cli::cli_alert_success("New contracts set for game {.val {self$active_game}}")
@@ -335,7 +333,7 @@ GameState <- R6::R6Class(
       self$players |>
         filter(player == self$active_player_name) |>
         pull(alive) |>
-        isTRUE()
+        isTruthy()
     },
 
     #' @description Is my contract target still alive?
@@ -344,7 +342,7 @@ GameState <- R6::R6Class(
       self$players |>
         filter(player == self$get_target()) |>
         pull(alive) |>
-        isTRUE()
+        isTruthy()
     },
 
     #' @description Confirm a kill
@@ -355,7 +353,7 @@ GameState <- R6::R6Class(
 
       target <- self$get_target()
       # Mark player as dead
-      duckdb::dbSendQuery(
+      dbSendQuery(
         self$conn,
         glue::glue_sql(
           "
@@ -385,14 +383,14 @@ GameState <- R6::R6Class(
         mutate(player = self$active_player_name,
                active = TRUE) |>
         collect() |>
-        duckdb::dbAppendTable(
+        dbAppendTable(
           conn = self$conn,
           name = "contracts",
           value = _
         )
 
       # Mark both previous contracts as no longer active
-      duckdb::dbSendQuery(
+      dbSendQuery(
         self$conn,
         glue::glue_sql(
           "
@@ -405,7 +403,7 @@ GameState <- R6::R6Class(
         )
       )
       cli::cli_alert_success("{target}'s contract marked as inactive")
-      duckdb::dbSendQuery(
+      dbSendQuery(
         self$conn,
         glue::glue_sql(
           "
@@ -466,10 +464,6 @@ GameState <- R6::R6Class(
 
       html <- tagList(
         p(
-          "You are",
-          tags$b(ifelse(is_alive, "ALIVE", "DEAD"))
-        ),
-        p(
           "You",
           ifelse(is_alive, "have", "had"),
           tags$b(NROW(kills), "successful kills")
@@ -523,7 +517,7 @@ GameState <- R6::R6Class(
       self$active_player_name <- player
 
       # If setting the ID for a player, update the table
-      duckdb::dbSendQuery(
+      dbSendQuery(
         self$conn,
         glue::glue_sql(
           "

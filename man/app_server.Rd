@@ -6,6 +6,13 @@
 \usage{
 app_server(input, output, session)
 }
+\arguments{
+\item{input}{app input}
+
+\item{output}{app output}
+
+\item{session}{app session}
+}
 \description{
 App server
 }

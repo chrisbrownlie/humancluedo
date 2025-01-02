@@ -4,6 +4,7 @@
 ## usethis namespace: start
 #' @import shiny
 #' @import bslib
-#' @import duckplyr
+#' @import dplyr
+#' @import DBI
 ## usethis namespace: end
 NULL

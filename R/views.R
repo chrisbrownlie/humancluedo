@@ -65,7 +65,7 @@ update_player_status <- function(state) {
   )
   performance <- state$get_performance()
 
-  if (isTRUE(performance$is_alive)) {
+  if (performance$is_alive) {
     shiny::insertUI(
       "#confirm_kill",
       p("You are trying to kill",
@@ -87,9 +87,9 @@ update_player_status <- function(state) {
         "-",
         tags$b(performance$killed_by$location),
         "at",
-        format(performance$killed_by$execution_time, "%R"),
+        format(performance$killed_by$execution_time, format = "%R"),
         "on",
-        format(performance$killed_by$execution_time, "%d-%m-%Y"),
+        format(performance$killed_by$execution_time, format = "%d-%m-%Y"),
         id = "activecontract"),
       where = "beforeBegin"
     )

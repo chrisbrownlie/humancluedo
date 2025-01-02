@@ -205,9 +205,7 @@ app_server <- function(input, output, session) {
   output$db_location <- renderUI({
     req(game_state)
     div(
-      p(paste0("db location: ", game_state$conn@driver@dbdir)),
-      p(paste0("config location: ", paste(game_state$conn@driver@config, collapse = ", "))),
-      p("Tables: ", paste(duckdb::dbListTables(game_state$conn), collapse = ", "))
+      p("Tables: ", paste(dbListTables(game_state$conn), collapse = ", "))
     )
   })
 

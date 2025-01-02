@@ -1,16 +1,15 @@
-#' Create duckdb database connection
+#' Create sqlite database connection
 #'
 #' @return a connection object
 #' @export
 db_conn <- function() {
-  dbpath <- fs::path("data-store", "hc-db.duckdb")
+  dbpath <- fs::path("data-store", "hc-db.sqlite")
   if (!shiny::isRunning()) {
-    dbpath <- fs::path("inst", "app", "data-store", "hc-db.duckdb")
+    dbpath <- fs::path("inst", "app", "data-store", "hc-db.sqlite")
   }
   DBI::dbConnect(
-    duckdb::duckdb(),
-    dbdir = dbpath,
-    read_only = FALSE
+    RSQLite::SQLite(),
+    dbpath
   )
 }
 
@@ -22,7 +21,7 @@ db_conn <- function() {
 #' @export
 create_database <- function(conn = db_conn()) {
 
-  if (!duckdb::dbExistsTable(conn, "games")) {
+  if (!dbExistsTable(conn, "games")) {
     tibble::tibble(
       game_id = character(),
       name = character(),
@@ -30,7 +29,7 @@ create_database <- function(conn = db_conn()) {
       win_condition = character(),
       population_method = character()
     ) |>
-      duckdb::dbWriteTable(
+      dbWriteTable(
         conn = conn,
         name = "games"
       )
@@ -39,7 +38,7 @@ create_database <- function(conn = db_conn()) {
     cli::cli_alert_info("[games] already exists")
   }
 
-  if (!duckdb::dbExistsTable(conn, "players")) {
+  if (!dbExistsTable(conn, "players")) {
     tibble::tibble(
       game_id = character(),
       player = character(),
@@ -47,7 +46,7 @@ create_database <- function(conn = db_conn()) {
       alive = logical(),
       is_admin = logical()
     ) |>
-      duckdb::dbWriteTable(
+      dbWriteTable(
         conn = conn,
         name = "players"
       )
@@ -56,13 +55,13 @@ create_database <- function(conn = db_conn()) {
     cli::cli_alert_info("[players] already exists")
   }
 
-  if (!duckdb::dbExistsTable(conn, "items")) {
+  if (!dbExistsTable(conn, "items")) {
     tibble::tibble(
       game_id = character(),
       item = character(),
       generated_by = character()
     ) |>
-      duckdb::dbWriteTable(
+      dbWriteTable(
         conn = conn,
         name = "items"
       )
@@ -71,13 +70,13 @@ create_database <- function(conn = db_conn()) {
     cli::cli_alert_info("[items] already exists")
   }
 
-  if (!duckdb::dbExistsTable(conn, "locations")) {
+  if (!dbExistsTable(conn, "locations")) {
     tibble::tibble(
       game_id = character(),
       location = character(),
       generated_by = character()
     ) |>
-      duckdb::dbWriteTable(
+      dbWriteTable(
         conn = conn,
         name = "locations"
       )
@@ -86,7 +85,7 @@ create_database <- function(conn = db_conn()) {
     cli::cli_alert_info("[locations] already exists")
   }
 
-  if (!duckdb::dbExistsTable(conn, "contracts")) {
+  if (!dbExistsTable(conn, "contracts")) {
     tibble::tibble(
       game_id = character(),
       player = character(),
@@ -97,7 +96,7 @@ create_database <- function(conn = db_conn()) {
       execution_time = lubridate::POSIXct(),
       execution_notes = character()
     ) |>
-      duckdb::dbWriteTable(
+      dbWriteTable(
         conn = conn,
         name = "contracts"
       )

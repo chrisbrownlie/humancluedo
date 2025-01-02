@@ -23,15 +23,15 @@ in the active game}
 \item{\code{active_player_name}}{the name of the currently active player,
 in the active game}
 
-\item{\code{players}}{a duckplyr tibble indicating game players and status}
+\item{\code{players}}{a lazy tibble indicating game players and status}
 
-\item{\code{items}}{a duckplyr tibble indicating items in the game}
+\item{\code{items}}{a lazy tibble indicating items in the game}
 
-\item{\code{locations}}{a duckplyr tibble indicating locations in the game}
+\item{\code{locations}}{a lazy tibble indicating locations in the game}
 
-\item{\code{contracts}}{a duckplyr tibble indicating game contracts}
+\item{\code{contracts}}{a lazy tibble indicating game contracts}
 
-\item{\code{details}}{a one-row duckplyr tibble indicating the metadata for
+\item{\code{details}}{a one-row lazy tibble indicating the metadata for
 the game, including the win condition (duel or spree) and object
 population method (auto, admin, players)}
 }

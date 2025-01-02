@@ -2,7 +2,7 @@
 % Please edit documentation in R/database.R
 \name{db_conn}
 \alias{db_conn}
-\title{Create duckdb database connection}
+\title{Create sqlite database connection}
 \usage{
 db_conn()
 }
@@ -10,5 +10,5 @@ db_conn()
 a connection object
 }
 \description{
-Create duckdb database connection
+Create sqlite database connection
 }
