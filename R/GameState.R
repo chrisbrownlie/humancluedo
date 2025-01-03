@@ -83,21 +83,7 @@ GameState <- R6::R6Class(
       self$active_game <- game_id
       self$active_game_name <- game$name
 
-      self$players <- self$conn |>
-        dplyr::tbl("players") |>
-        filter(.data$game_id == .env$game_id)
-
-      self$items <- self$conn |>
-        dplyr::tbl("items") |>
-        filter(.data$game_id == .env$game_id)
-
-      self$locations <- self$conn |>
-        dplyr::tbl("locations") |>
-        filter(.data$game_id == .env$game_id)
-
-      self$contracts <- self$conn |>
-        dplyr::tbl("contracts") |>
-        filter(.data$game_id == .env$game_id)
+      self$populate_object_tables()
 
       # Get player name
       if (is.null(self$active_player_name) && !is.null(self$active_player)) {
@@ -171,6 +157,30 @@ GameState <- R6::R6Class(
                               value = _)
       cli::cli_alert_success("Players added for new game {.val {new_game_id}}")
 
+      self$populate_object_tables()
+
+      invisible(self)
+    },
+
+    #' Ensure that the object tables contain lazy copies of the relevant tables from the database
+    populate_object_tables = function() {
+      if (!self$is_initialised()) return(FALSE)
+      self$players <- self$conn |>
+        dplyr::tbl("players") |>
+        filter(.data$game_id == !!self$active_game)
+
+      self$items <- self$conn |>
+        dplyr::tbl("items") |>
+        filter(.data$game_id == !!self$active_game)
+
+      self$locations <- self$conn |>
+        dplyr::tbl("locations") |>
+        filter(.data$game_id == !!self$active_game)
+
+      self$contracts <- self$conn |>
+        dplyr::tbl("contracts") |>
+        filter(.data$game_id == !!self$active_game)
+
       invisible(self)
     },
 
@@ -236,6 +246,9 @@ GameState <- R6::R6Class(
     #' until the end of the game.
     set_contracts = function() {
       if (!self$is_initialised()) cli::cli_abort("Initialise or create game first")
+      if (self$is_contracted()) {
+        cli::cli_warn("Contracts already set, overwriting")
+      }
 
       players <- self$players |>
         pull(player)
@@ -299,6 +312,10 @@ GameState <- R6::R6Class(
     is_initialised = function() {
       length(self$active_game)>0
     },
+    #' @description Have contracts been set?
+    is_contracted = function() {
+      pull(tally(self$contracts), n) > 0
+    },
 
     #' @description Get my contract target
     get_target = function() {
@@ -338,9 +355,9 @@ GameState <- R6::R6Class(
 
     #' @description Is my contract target still alive?
     target_is_alive = function() {
-      if (!self$is_alive()) return(FALSE)
+      if (!self$is_alive() | !self$is_contracted()) return(FALSE)
       self$players |>
-        filter(player == self$get_target()) |>
+        filter(player == !!self$get_target()) |>
         pull(alive) |>
         isTruthy()
     },

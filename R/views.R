@@ -60,7 +60,7 @@ update_player_status <- function(state) {
   }
   shiny::insertUI(
     "#game_status",
-    p("Current player status:", id = "playerstatus_start"),
+    p("Current player status:", class = "px-3", id = "playerstatus_start"),
     where = "beforeEnd"
   )
   performance <- state$get_performance()
@@ -106,6 +106,7 @@ update_player_status <- function(state) {
     "#playerstatus_start",
     tags$div(
       id = "playerstatus",
+      class = "px-3",
       state$get_player_status(as_html = TRUE)
     ),
     where = "afterEnd"
@@ -124,6 +125,7 @@ update_game_link <- function(state) {
     "#game_status",
     tags$div(
       id = "game_link",
+      class = "p-3",
       actionButton("game_link",
                    label = tagList(
                      bsicons::bs_icon("share"),

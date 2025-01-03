@@ -1,44 +1,30 @@
 create_game_modal <- function() {
   modalDialog(
-    tags$i("Create a game of human cluedo"),
-    p("Enter a comma-separated list for all the below"),
-    p("Names of players e.g. 'John, Jack, Sarah'. Note that the first player entered will be the admin."),
-    textInput("players", "Players:"),
-    p("Select the win condition i.e. how the game proceeds when down to the final two players"),
-    tags$ul(
-      tags$li(tags$b("Duel:"), "the winner is decided by which of the final two players manages to kill the other.",
-              "In the event that the game ends before this, the player who has the most kills", tags$i("and is still alive"),
-              "wins."),
-      tags$li(tags$b("Spree:"), "the winner is decided by the person with the most kills at the end of the game.")
+    size = "l",
+    easyClose = TRUE,
+    tags$div(
+      class = "text-center",
+      tags$i("Create a game of human cluedo"),
+      p("Names of players separated by a comma e.g. 'John, Jack, Sarah'. Note that the first player entered will be the admin."),
+      textInput("players", "Players:"),
+      radioButtons("win_condition", "Select the win condition rules:",
+                   choices = c("Duel" = "duel", "Spree" = "spree"),
+                   inline = TRUE),
+      radioButtons("obj_pop_method", "Select how items and locations should be populated:",
+                   choices = c("Players" = "players", "Auto" = "auto", "Admin" = "admin"),
+                   inline = TRUE),
+      div(
+        id = "admin_entry_objs",
+        p("Items for contracts. Should make sense following the word 'with', e.g. 'a spoon, an apple, a colander'"),
+        textInput("items", "Items:"),
+        p("Locations for contracts. Should make sense following an item or player, e.g. 'in the bedroom, next to the bbq, while touching a door'"),
+        textInput("locations", "Locations:"),
+        uiOutput("validation_ui")
+      ) |>
+        shinyjs::hidden(),
+      textInput("game_name", "Optional game name (leave blank to randomly generate):"),
+      actionButton("generate_random", "Generate random name")
     ),
-    radioButtons("win_condition", "Which win condition?",
-                 choices = c("Duel" = "duel", "Spree" = "spree"),
-                 inline = TRUE),
-    p("Select how the items and locations should be populated:"),
-    tags$ul(
-      tags$li(tags$b("Players:"), "when each player joins the game they will be asked to enter an item and a location.",
-              "Once all players have joined, you (as the admin) can start the game by randomly assigning contracts using",
-              "the items and locations that players entered."),
-      tags$li(tags$b("Auto:"), "automatically generate common househould items and locations to use. Note that this may",
-              "result in items or locations that are not possible for your game."),
-      tags$li(tags$b("Admin:"), "enter the necessary number of items and locations yourself.",
-              "This will mean you have an advantage over the other players, but allows you to generate contracts before",
-              "all players have joined, so that players can see their own contract as soon as they join.")
-    ),
-    radioButtons("obj_pop_method", "Item/Location population method:",
-                 choices = c("Players" = "players", "Auto" = "auto", "Admin" = "admin"),
-                 inline = TRUE),
-    div(
-      id = "admin_entry_objs",
-      p("Items for contracts. Should make sense following the word 'with', e.g. 'a spoon, an apple, a colander'"),
-      textInput("items", "Items:"),
-      p("Locations for contracts. Should make sense following an item or player, e.g. 'in the bedroom, next to the bbq, while touching a door'"),
-      textInput("locations", "Locations:"),
-      uiOutput("validation_ui")
-    ) |>
-      shinyjs::hidden(),
-    textInput("game_name", "Game name:"),
-    actionButton("generate_random", "Generate random name"),
     footer = actionButton("create_new",
                           "Confirm") |>
       shinyjs::disabled()

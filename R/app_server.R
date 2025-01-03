@@ -116,6 +116,60 @@ app_server <- function(input, output, session) {
     }
   })
 
+  # Details for creating new game
+  observe({
+    removeUI("#win_condition_desc")
+    if (input$win_condition == "duel") {
+      desc <- p(
+        id = "win_condition_desc",
+        tags$b("Duel:"),
+        "the winner is decided by which of the final two players manages to kill the other.",
+        "In the event that the game ends before this, the player who has the most kills", tags$i("and is still alive"),
+        "wins.")
+    } else if (input$win_condition == "spree") {
+      desc <- p(
+        id = "win_condition_desc",
+        tags$b("Spree:"), "the winner is decided by the person with the most kills at the end of the game."
+      )
+    }
+    insertUI(
+      "#win_condition",
+      where = "afterEnd",
+      desc
+    )
+  }) |>
+    bindEvent(input$win_condition)
+  observe({
+    removeUI("#obj_pop_method_desc")
+    if (input$obj_pop_method == "players") {
+      desc <- p(
+        id = "obj_pop_method_desc",
+        tags$b("Players:"),
+        "when each player joins the game they will be asked to enter an item and a location.",
+        "Once all players have joined, you (as the admin) can start the game by randomly assigning contracts using",
+        "the items and locations that players entered.")
+    } else if (input$obj_pop_method == "auto") {
+      desc <- p(
+        id = "obj_pop_method_desc",
+        tags$b("Auto:"), "automatically generate common househould items and locations to use. Note that this may",
+        "result in items or locations that are not possible for your game."
+      )
+    } else if (input$obj_pop_method == "admin") {
+      desc <- p(
+        id = "obj_pop_method_desc",
+        tags$b("Admin:"), "enter the necessary number of items and locations yourself.",
+        "This will mean you have an advantage over the other players, but allows you to generate contracts before",
+        "all players have joined, so that players can see their own contract as soon as they join."
+      )
+    }
+    insertUI(
+      "#obj_pop_method",
+      where = "afterEnd",
+      desc
+    )
+  }) |>
+    bindEvent(input$win_condition)
+
   # Validation UI for admin entry population method
   output$validation_ui <- renderUI({
     req(input$obj_pop_method == "admin")
@@ -168,10 +222,10 @@ app_server <- function(input, output, session) {
       items <- generate_items(n = length(player_vec))
       for (item in items) game_state$add_item(item, generated_by = "admin")
 
-      items <- generate_locations(n = length(player_vec))
+      locations <- generate_locations(n = length(player_vec))
       for (location in locations) game_state$add_location(location, generated_by = "admin")
 
-
+      game_state$set_contracts()
     } else if (input$obj_pop_method == "admin") {
       # Use admin supplied values
       items <- csl_to_vec(input$items)
@@ -189,8 +243,8 @@ app_server <- function(input, output, session) {
 
   observeEvent(input$game_link, {
     showModal(
-      shiny::urlModal(url = paste0("http://127.0.0.1:7048/?game=", game_state$active_game),
-                      title = "See game link")
+      shiny::urlModal(url = paste0("http://apps.chrisbrownlie.com/app/humancluedo/?game=", game_state$active_game),
+                      title = "Copy game link")
     )
   })
 
