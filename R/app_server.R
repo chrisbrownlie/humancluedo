@@ -217,11 +217,11 @@ app_server <- function(input, output, session) {
     # Create the game (in the DB)
     removeModal()
     # Clean inputs
-    player_vec <- csl_to_vec(input$players)
+    player_vec <- csl_to_vec(input$players) |>
+      stringr::str_to_title()
 
     game_state$create_game(players = player_vec,
                            game_name = input$name,
-                           deadline = input$game_deadline,
                            win_condition = input$win_condition,
                            obj_pop_method = input$obj_pop_method)
 

@@ -37,17 +37,6 @@ create_game_modal <- function() {
       ) |>
         shinyjs::hidden(),
       hr(),
-      tags$b("Game Deadline", class = "h5 text-red"),
-      p("After the deadline, the game will be finished and kills can no longer",
-        "be recorded."),
-      shinyDatetimePickers::datetimeMaterialPickerInput(
-        inputId = "game_deadline",
-        label = "",
-        value = lubridate::now() + lubridate::days(14),
-        disablePast = TRUE,
-        style = "width:100%;"
-      ),
-      hr(),
       textInput("game_name", tags$span("Game name:", class = "h5 text-red")) |>
         htmltools::tagAppendAttributes(class = "w-100"),
       tags$small("(Leave blank to generate a random name)")
