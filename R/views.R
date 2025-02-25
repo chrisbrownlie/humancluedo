@@ -110,8 +110,9 @@ update_game_link <- function(state) {
 
   shiny::removeUI("#whatsapp_link")
 
-  # Can hide share link when game has started (no new players can join)
-  if (state$get_game_status() == "in progress") return(invisible(NULL))
+  # Can hide share link when game has started and all players have joined
+  if (state$get_game_status() == "in progress" &&
+      sum(is.na(pull(state$players, identifier))) == 0) return(invisible(NULL))
 
   link_text <- paste0(
     "Join my game of Human Cluedo - '",

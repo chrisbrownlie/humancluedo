@@ -250,19 +250,4 @@ app_server <- function(input, output, session) {
     bindEvent(input$create_new)
 
 
-  # Testing
-  output$url_parsing <- renderUI({
-    req(session$clientData$url_search)
-    query <- parseQueryString(session$clientData$url_search)
-    #p(paste(names(query), query, sep = "=", collapse=", "))
-    p(session$clientData$url_hash)
-  })
-
-  output$db_location <- renderUI({
-    req(game_state)
-    div(
-      p("Tables: ", paste(dbListTables(game_state$conn), collapse = ", "))
-    )
-  })
-
 }
