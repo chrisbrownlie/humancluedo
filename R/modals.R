@@ -4,26 +4,53 @@ create_game_modal <- function() {
     easyClose = TRUE,
     tags$div(
       class = "text-center",
-      tags$i("Create a game of human cluedo"),
+      tags$b(class = "h4 text-green", "New game"),
       p("Names of players separated by a comma e.g. 'John, Jack, Sarah'. Note that the first player entered will be the admin."),
-      textInput("players", "Players:"),
-      radioButtons("win_condition", "Select the win condition rules:",
-                   choices = c("Duel" = "duel", "Spree" = "spree"),
+      textInput("players", "Players:") |> htmltools::tagAppendAttributes(class = "w-100"),
+      hr(),
+      radioButtons("win_condition", tags$span("Game type:", class = "h5 text-red"),
+                   choices = c("Survival" = "duel", "Kills" = "spree"),
                    inline = TRUE),
-      radioButtons("obj_pop_method", "Select how items and locations should be populated:",
+      p(
+        id = "win_condition_desc",
+        tags$b("Survival:"),
+        "the final standings are determined by the order in which players are killed. ",
+        "In the event that multiple players are alive at the end of the game, ",
+        "number of kills will be used to break ties."),
+      hr(),
+      radioButtons("obj_pop_method", tags$span("Contract method:", class = "h5 text-red"),
                    choices = c("Players" = "players", "Auto" = "auto", "Admin" = "admin"),
                    inline = TRUE),
+      p(
+        id = "obj_pop_method_desc",
+        tags$b("Players:"),
+        "when each player joins the game they will be asked to enter an item and a location.",
+        "Once all players have joined, the game will start by randomly assigning contracts using",
+        "the items and locations that players entered."),
       div(
         id = "admin_entry_objs",
         p("Items for contracts. Should make sense following the word 'with', e.g. 'a spoon, an apple, a colander'"),
-        textInput("items", "Items:"),
+        textInput("items", "Items:") |> htmltools::tagAppendAttributes(class = "w-100"),
         p("Locations for contracts. Should make sense following an item or player, e.g. 'in the bedroom, next to the bbq, while touching a door'"),
-        textInput("locations", "Locations:"),
+        textInput("locations", "Locations:") |> htmltools::tagAppendAttributes(class = "w-100"),
         uiOutput("validation_ui")
       ) |>
         shinyjs::hidden(),
-      textInput("game_name", "Optional game name (leave blank to randomly generate):"),
-      actionButton("generate_random", "Generate random name")
+      hr(),
+      tags$b("Game Deadline", class = "h5 text-red"),
+      p("After the deadline, the game will be finished and kills can no longer",
+        "be recorded."),
+      shinyDatetimePickers::datetimeMaterialPickerInput(
+        inputId = "game_deadline",
+        label = "",
+        value = lubridate::now() + lubridate::days(14),
+        disablePast = TRUE,
+        style = "width:100%;"
+      ),
+      hr(),
+      textInput("game_name", tags$span("Game name:", class = "h5 text-red")) |>
+        htmltools::tagAppendAttributes(class = "w-100"),
+      tags$small("(Leave blank to generate a random name)")
     ),
     footer = actionButton("create_new",
                           "Confirm") |>

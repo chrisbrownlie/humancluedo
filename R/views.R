@@ -10,16 +10,14 @@ update_game_status_ui <- function(state) {
 
 #' Update basic game details like the name and the active player
 update_game_details <- function(state) {
-  shiny::removeUI("#gamename")
-  shiny::removeUI("#activeplayer")
+  shiny::removeUI("#gamename", multiple = TRUE)
   shiny::insertUI(
     "#confirm_kill",
-    card_title("Human Cluedo -", tags$b(state$active_game_name), id = "gamename"),
-    where = "beforeBegin"
-  )
-  shiny::insertUI(
-    "#confirm_kill",
-    p("You are:", tags$b(state$active_player_name), id = "activeplayer"),
+    tags$div(
+      tags$span(class = "h5 text-info", "Human Cluedo"),
+      br(),
+      tags$b(class = "h1", state$active_game_name),
+      id = "gamename"),
     where = "beforeBegin"
   )
 }
@@ -27,9 +25,8 @@ update_game_details <- function(state) {
 #' Update the current players status
 update_player_status <- function(state) {
   shiny::removeUI("#activecontract")
-  shiny::removeUI("#playerstatus")
   shiny::removeUI("#game_performance")
-  shiny::removeUI("#playerstatus_start")
+  shiny::removeUI("#playerstatus")
   players <- collect(state$players)
   if (state$get_game_status() == "awaiting") {
     shiny::insertUI(
@@ -58,83 +55,92 @@ update_player_status <- function(state) {
     shinyjs::hide("confirm_kill")
     return(invisible(NULL))
   }
-  shiny::insertUI(
-    "#game_status",
-    p("Current player status:", class = "px-3", id = "playerstatus_start"),
-    where = "beforeEnd"
-  )
-  performance <- state$get_performance()
 
-  if (performance$is_alive) {
+  # If game is over, hide confirm kill. Otherwise show status & active contract
+  if (state$get_game_status() == "finished") {
+    winner <- state$players |>
+      filter(alive) |>
+      pull(player) |>
+      stringr::str_flatten_comma()
     shiny::insertUI(
       "#confirm_kill",
-      p("Your current mission is to kill",
-        tags$b(state$get_target()),
-        "with",
-        tags$b(state$get_item()),
-        "-",
-        tags$b(state$get_location()),
-        id = "activecontract"),
+      h2(paste0("Game over - congratulations ", winner, "! 🎉🎉🎉"),
+         class = "text-warning"),
       where = "beforeBegin"
     )
+    shinyjs::hide("confirm_kill")
   } else {
+    # Insert player status and active contract
     shiny::insertUI(
       "#confirm_kill",
-      p("You were killed by",
-        tags$b(performance$killed_by$player),
-        "with",
-        tags$b(performance$killed_by$item),
-        "-",
-        tags$b(performance$killed_by$location),
-        "at",
-        format(performance$killed_by$execution_time, format = "%R"),
-        "on",
-        format(performance$killed_by$execution_time, format = "%d-%m-%Y"),
-        id = "activecontract"),
+      get_active_contract(state),
       where = "beforeBegin"
     )
   }
+
+  # Insert game timeline
   shiny::insertUI(
     "#confirm_kill",
     tags$div(
       id = "game_performance",
-      performance$html
+      class = "timeline text-center",
+      get_game_timeline(state)
     ),
-    where = "beforeBegin"
+    where = "afterEnd"
   )
+
+  # Insert leaderboard/player status
   shiny::insertUI(
-    "#playerstatus_start",
+    "#game_performance",
     tags$div(
       id = "playerstatus",
-      class = "px-3",
-      state$get_player_status(as_html = TRUE)
+      hr(),
+      h3("Leaderboard"),
+      get_player_leaderboard(state)
     ),
     where = "afterEnd"
   )
 
   shinyjs::toggleState("confirm_kill",
-                       condition = state$target_is_alive())
+                       condition = state$get_game_status() == "in progress")
 }
 
 #' Update the game link
 update_game_link <- function(state) {
 
-  shiny::removeUI("#game_link")
+  shiny::removeUI("#whatsapp_link")
+
+  # Can hide share link when game has started (no new players can join)
+  if (state$get_game_status() == "in progress") return(invisible(NULL))
+
+  link_text <- paste0(
+    "Join my game of Human Cluedo - '",
+    state$active_game_name, "' here: ",
+    "http://apps.chrisbrownlie.com/app/humancluedo/?game=",
+    state$active_game
+  ) |>
+    URLencode()
 
   shiny::insertUI(
     "#game_status",
+    where = "beforeEnd",
     tags$div(
-      id = "game_link",
-      class = "p-3",
-      actionButton("game_link",
-                   label = tagList(
-                     bsicons::bs_icon("share"),
-                     "Get game link"
-                   ),
-                   icon = NULL)
-    ),
-    where = "beforeEnd"
+      p("Share the URL to invite people to this game, or use the",
+        "button below to share on Whatsapp.",
+        "Note that anyone who has the link can join!",
+        class = "p-2"),
+      tags$a(
+        bsicons::bs_icon("whatsapp",
+                         class = "fs-1 mb-3 ms-3 text-green"),
+        href = paste0(
+          "https://api.whatsapp.com/send?text=",
+          link_text
+        )
+      ),
+      id = "whatsapp_link",
+    )
   )
+
 }
 
 show_invalid_game_id <- function() {

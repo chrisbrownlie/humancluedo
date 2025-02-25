@@ -63,6 +63,29 @@ generate_locations <- function(n) {
   sample(vals, n)
 }
 
+death_verb <- function(adverb = FALSE) {
+  murder_verbs <- c(
+    "slashed", "stabbed", "shot", "bludgeoned", "strangled",
+    "murdered", "drowned", "executed", "exsanguinated", "mutilated",
+    "decapitated", "impaled", "choked", "disemboweled", "burned",
+    "crushed", "gutted", "smothered", "sundered", "assassinated",
+    "beaten", "axed", "suffocated", "pierced", "eviscerated",
+    "pulverized", "brutalized", "slaughtered", "massacred", "dispatched"
+  )
+  murder_verb <- sample(murder_verbs, 1)
+  if (!adverb) return(murder_verb)
+  murder_adverbs <- c(
+    "brutally", "viciously", "ruthlessly", "mercilessly", "savagely",
+    "coldly", "remorselessly", "callously", "violently", "ferociously",
+    "silently", "swiftly", "effortlessly", "suddenly", "fatally",
+    "painfully", "gruesomely", "grotesquely", "bloodily", "cruelly",
+    "methodically", "systematically", "relentlessly", "diabolically", "sinisterly"
+  )
+  paste(
+    sample(murder_adverbs, 1),
+    murder_verb
+  )
+}
 
 clean_game <- function() {
   conn <- db_conn()

@@ -118,19 +118,24 @@ app_server <- function(input, output, session) {
 
   # Details for creating new game
   observe({
+    req(input$win_condition)
     removeUI("#win_condition_desc")
-    if (input$win_condition == "duel") {
+    if (input$win_condition == "spree") {
       desc <- p(
         id = "win_condition_desc",
-        tags$b("Duel:"),
-        "the winner is decided by which of the final two players manages to kill the other.",
-        "In the event that the game ends before this, the player who has the most kills", tags$i("and is still alive"),
-        "wins.")
-    } else if (input$win_condition == "spree") {
-      desc <- p(
-        id = "win_condition_desc",
-        tags$b("Spree:"), "the winner is decided by the person with the most kills at the end of the game."
+        tags$b("Kills:"),
+        "the winner is decided by the person with the most kills at the end of the game.",
+        "It does not matter if you die, as long as you get some kills in! In the event ",
+        "of a tie, indirect kills will be used (i.e. deaths caused by people you killed), ",
+        "and then length of time survived."
       )
+    } else {
+      desc <- p(
+        id = "win_condition_desc",
+        tags$b("Survival:"),
+        "the final standings are determined by the order in which players are killed. ",
+        "In the event that multiple players are alive at the end of the game, ",
+        "number of kills will be used to break ties. ")
     }
     insertUI(
       "#win_condition",
@@ -140,15 +145,9 @@ app_server <- function(input, output, session) {
   }) |>
     bindEvent(input$win_condition)
   observe({
+    req(input$obj_pop_method)
     removeUI("#obj_pop_method_desc")
-    if (input$obj_pop_method == "players") {
-      desc <- p(
-        id = "obj_pop_method_desc",
-        tags$b("Players:"),
-        "when each player joins the game they will be asked to enter an item and a location.",
-        "Once all players have joined, you (as the admin) can start the game by randomly assigning contracts using",
-        "the items and locations that players entered.")
-    } else if (input$obj_pop_method == "auto") {
+    if (input$obj_pop_method == "auto") {
       desc <- p(
         id = "obj_pop_method_desc",
         tags$b("Auto:"), "automatically generate common househould items and locations to use. Note that this may",
@@ -161,6 +160,13 @@ app_server <- function(input, output, session) {
         "This will mean you have an advantage over the other players, but allows you to generate contracts before",
         "all players have joined, so that players can see their own contract as soon as they join."
       )
+    } else {
+      desc <- p(
+        id = "obj_pop_method_desc",
+        tags$b("Players:"),
+        "when each player joins the game they will be asked to enter an item and a location.",
+        "Once all players have joined, the game will start by randomly assigning contracts using",
+        "the items and locations that players entered.")
     }
     insertUI(
       "#obj_pop_method",
@@ -168,7 +174,7 @@ app_server <- function(input, output, session) {
       desc
     )
   }) |>
-    bindEvent(input$win_condition)
+    bindEvent(input$obj_pop_method)
 
   # Validation UI for admin entry population method
   output$validation_ui <- renderUI({
@@ -212,8 +218,10 @@ app_server <- function(input, output, session) {
     removeModal()
     # Clean inputs
     player_vec <- csl_to_vec(input$players)
+
     game_state$create_game(players = player_vec,
                            game_name = input$name,
+                           deadline = input$game_deadline,
                            win_condition = input$win_condition,
                            obj_pop_method = input$obj_pop_method)
 
@@ -240,13 +248,6 @@ app_server <- function(input, output, session) {
     launch_a_game(game_state, existing_cookie = cookies::get_cookie("player_id", missing = session$token))
   }) |>
     bindEvent(input$create_new)
-
-  observeEvent(input$game_link, {
-    showModal(
-      shiny::urlModal(url = paste0("http://apps.chrisbrownlie.com/app/humancluedo/?game=", game_state$active_game),
-                      title = "Copy game link")
-    )
-  })
 
 
   # Testing

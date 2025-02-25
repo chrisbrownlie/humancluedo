@@ -43,19 +43,20 @@ population method (auto, admin, players)}
 \item \href{#method-GameState-new}{\code{GameState$new()}}
 \item \href{#method-GameState-initialise_game}{\code{GameState$initialise_game()}}
 \item \href{#method-GameState-create_game}{\code{GameState$create_game()}}
+\item \href{#method-GameState-populate_object_tables}{\code{GameState$populate_object_tables()}}
 \item \href{#method-GameState-add_item}{\code{GameState$add_item()}}
 \item \href{#method-GameState-remove_item}{\code{GameState$remove_item()}}
 \item \href{#method-GameState-add_location}{\code{GameState$add_location()}}
 \item \href{#method-GameState-remove_location}{\code{GameState$remove_location()}}
 \item \href{#method-GameState-set_contracts}{\code{GameState$set_contracts()}}
 \item \href{#method-GameState-is_initialised}{\code{GameState$is_initialised()}}
+\item \href{#method-GameState-is_contracted}{\code{GameState$is_contracted()}}
 \item \href{#method-GameState-get_target}{\code{GameState$get_target()}}
 \item \href{#method-GameState-get_item}{\code{GameState$get_item()}}
 \item \href{#method-GameState-get_location}{\code{GameState$get_location()}}
 \item \href{#method-GameState-is_alive}{\code{GameState$is_alive()}}
 \item \href{#method-GameState-target_is_alive}{\code{GameState$target_is_alive()}}
 \item \href{#method-GameState-confirm_kill}{\code{GameState$confirm_kill()}}
-\item \href{#method-GameState-get_player_status}{\code{GameState$get_player_status()}}
 \item \href{#method-GameState-get_performance}{\code{GameState$get_performance()}}
 \item \href{#method-GameState-set_active_player}{\code{GameState$set_active_player()}}
 \item \href{#method-GameState-get_game_status}{\code{GameState$get_game_status()}}
@@ -110,6 +111,7 @@ Create a new game from a tibble of contracts}
 \if{html}{\out{<div class="r">}}\preformatted{GameState$create_game(
   players,
   game_name,
+  deadline,
   win_condition = c("duel", "spree"),
   obj_pop_method = c("players", "auto", "admin")
 )}\if{html}{\out{</div>}}
@@ -127,10 +129,20 @@ will be the admin.}
 
 \item{\code{obj_pop_method}}{the object population method for the game (auto,
 admin or players)
+Ensure that the object tables contain lazy copies of the relevant tables from the database
 Add an item to the current game}
 }
 \if{html}{\out{</div>}}
 }
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-GameState-populate_object_tables"></a>}}
+\if{latex}{\out{\hypertarget{method-GameState-populate_object_tables}{}}}
+\subsection{Method \code{populate_object_tables()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{GameState$populate_object_tables()}\if{html}{\out{</div>}}
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-GameState-add_item"></a>}}
@@ -226,6 +238,16 @@ Has a game been initialised?
 
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-GameState-is_contracted"></a>}}
+\if{latex}{\out{\hypertarget{method-GameState-is_contracted}{}}}
+\subsection{Method \code{is_contracted()}}{
+Have contracts been set?
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{GameState$is_contracted()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-GameState-get_target"></a>}}
 \if{latex}{\out{\hypertarget{method-GameState-get_target}{}}}
 \subsection{Method \code{get_target()}}{
@@ -290,25 +312,6 @@ Confirm a kill
 \item{\code{execution_time}}{the time of execution}
 
 \item{\code{notes}}{any notes to add to the contract after completing}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-GameState-get_player_status"></a>}}
-\if{latex}{\out{\hypertarget{method-GameState-get_player_status}{}}}
-\subsection{Method \code{get_player_status()}}{
-Get the status of all other players
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{GameState$get_player_status(as_html = FALSE)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{as_html}}{if TRUE, will return a HTML list of player statuses,
-if FALSE (the default) will return a two column tibble of player name
-and status}
 }
 \if{html}{\out{</div>}}
 }

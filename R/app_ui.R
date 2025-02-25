@@ -7,18 +7,17 @@ app_ui <- function() {
     theme = bs_theme(version = 5,
                      heading_font = bslib::font_google("Jersey 15")),
     class = "bg-secondary-subtle",
-    gap = "20px",
+    gap = "10px",
     padding = 10,
-    tags$header(shinyjs::useShinyjs()),
+    tags$header(shinyjs::useShinyjs(),
+
+                tags$link(href = "timeline.css", rel = "stylesheet", type = "text/css")),
     # Created new game card
     card(
       fill = FALSE,
       id = "post_game_creation",
       card_title("Game created!", id = "gamename"),
-      p("You can see your assignment below!"),
-      p("Use this link to invite people to this game - note that anyone
-        who has the link can join!"),
-      tags$a("", id = "game_link_created")
+      p("You can see your assignment below!")
     ) |>
       shinyjs::hidden(),
 
@@ -26,11 +25,12 @@ app_ui <- function() {
     card(
       fill = FALSE,
       id = "game_status",
-      card_title("Game Status", id = "gamename"),
-      p("You are: [active player]", id = "activeplayer"),
-      p("You are trying to kill [target player] with [item]", id = "activecontract"),
+      class = "text-center",
       p(id = "game_performance"),
-      actionButton("confirm_kill", "Confirm kill!")
+      actionButton("confirm_kill", "Confirm kill!",
+                   class = "w-50 align-self-center"),
+      tags$a(bsicons::bs_icon("whatsapp"),
+             id = "whatsapp_link")
     ) |>
       shinyjs::hidden(),
 
@@ -78,9 +78,9 @@ app_ui <- function() {
           "The goal is to eliminate as many targets as possible while avoiding elimination yourself."),
         h4("Key points", class = "display-5 text-green"),
         tags$ul(
-          tags$li("Players cannot force a target to accept an item. Use strategy and don't be suspicious!"),
-          tags$li("Once eliminated, players must stop pursuing their own contracts and cannot share information."),
-          tags$li("The game ends when only one player remains or a set time runs out. The winner is the last player standing or the one with the most completed contracts.")
+          tags$li("Players cannot force a target to accept an item (e.g. by throwing it at them). Use strategy and don't be suspicious!"),
+          tags$li("Once eliminated, players must stop pursuing their own contracts and cannot share any information."),
+          tags$li("The game ends when only one player remains or the game deadline is reached. The winner is the last player standing or the one with the most completed contracts, depending on the selected game type.")
         ),
         p("Stay sharp, be creative, and trust no one!", class = "lead text-center text-cyan"),
         br()

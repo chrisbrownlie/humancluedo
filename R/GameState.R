@@ -105,6 +105,7 @@ GameState <- R6::R6Class(
     #' admin or players)
     create_game = function(players,
                            game_name,
+                           deadline,
                            win_condition = c("duel", "spree"),
                            obj_pop_method = c("players", "auto", "admin")) {
 
@@ -133,13 +134,21 @@ GameState <- R6::R6Class(
         cli::cli_alert_info("No game name supplied, generated as {.val {game_name}}")
       }
 
+      # If no deadline, assume 2 weeks
+      if (missing(deadline)) {
+        deadline <- lubridate::now() + lubridate::weeks(2)
+        cli::cli_alert_info("No deadline suppled, generated as {.val {deadline}}")
+      }
+
       # Add game
       tibble::tibble(
         game_id = new_game_id,
         name = game_name,
         active = TRUE,
         win_condition = win_condition,
-        population_method = obj_pop_method
+        population_method = obj_pop_method,
+        started_at = lubridate::now(),
+        deadline = deadline
       ) |>
         dbAppendTable(conn = self$conn,
                               name = "games",
@@ -350,6 +359,7 @@ GameState <- R6::R6Class(
       self$players |>
         filter(player == self$active_player_name) |>
         pull(alive) |>
+        as.logical() |>
         isTruthy()
     },
 
@@ -359,6 +369,7 @@ GameState <- R6::R6Class(
       self$players |>
         filter(player == !!self$get_target()) |>
         pull(alive) |>
+        as.logical() |>
         isTruthy()
     },
 
@@ -391,23 +402,21 @@ GameState <- R6::R6Class(
 
       if (pull(count((target_contract))) != 1) cli::cli_abort("Something went wrong adding new contract")
 
-      if (pull(target_contract, target) == self$active_player_name) {
-        # Win condition
-        cli::cli_abort("Deal with this issue")
+      # If not end of game, add new contract
+      if (pull(target_contract, target) != self$active_player_name) {
+        # Add to contracts table
+        target_contract |>
+          mutate(player = self$active_player_name,
+                 active = TRUE) |>
+          collect() |>
+          dbAppendTable(
+            conn = self$conn,
+            name = "contracts",
+            value = _
+          )
+
+        cli::cli_alert_success("New contract added - killing {pull(target_contract, target)}")
       }
-
-      cli::cli_alert_success("New contract added - killing {pull(target_contract, target)}")
-
-      # Add to contracts table
-      target_contract |>
-        mutate(player = self$active_player_name,
-               active = TRUE) |>
-        collect() |>
-        dbAppendTable(
-          conn = self$conn,
-          name = "contracts",
-          value = _
-        )
 
       # Mark both previous contracts as no longer active
       dbSendQuery(
@@ -416,7 +425,7 @@ GameState <- R6::R6Class(
           "
         UPDATE contracts
         SET active = {FALSE}, execution_notes = 'Contract incomplete'
-        WHERE player = {target}
+        WHERE player = {target} AND active = {TRUE}
         AND game_id = {self$active_game}
         ",
           .con = self$conn
@@ -429,43 +438,13 @@ GameState <- R6::R6Class(
           "
         UPDATE contracts
         SET active = {FALSE}, execution_time = {execution_time}, execution_notes = {notes}
-        WHERE target = {target}
+        WHERE target = {target} AND active = {TRUE}
         AND game_id = {self$active_game}
         ",
           .con = self$conn
         )
       )
       cli::cli_alert_success("Contract on {target} marked as complete")
-
-      # TODO: Handling for end of game
-
-
-    },
-
-    #' @description Get the status of all other players
-    #' @param as_html if TRUE, will return a HTML list of player statuses,
-    #' if FALSE (the default) will return a two column tibble of player name
-    #' and status
-    get_player_status = function(as_html = FALSE) {
-      if (!self$is_initialised()) return("")
-      ps <- self$players |>
-        filter(player != self$active_player_name) |>
-        select(player, alive) |>
-        collect()
-
-      if (!as_html) return(ps)
-
-      tags$ul(
-        purrr::map2(ps$player,
-                    ps$alive,
-                    \(player, state) {
-                      tags$li(
-                        tags$b(player),
-                        "is",
-                        tags$b(ifelse(state, "alive", "dead"), class = ifelse(state, "text-green", "text-red"))
-                      )
-                    })
-      )
     },
 
     #' @description Get performance in the current game
@@ -493,19 +472,9 @@ GameState <- R6::R6Class(
             purrr::pmap(kills,
                         \(...) {
                           kill <- list(...)
-                          et <- kill$execution_time |>
-                            lubridate::ymd_hms()
-                          days_ago <- lubridate::today()-lubridate::date(et)
-                          if (days_ago == 0) {
-                            ex_date <- "today!"
-                          } else if (days_ago == 1) {
-                            ex_date <- "yesterday!"
-                          } else {
-                            ex_date <- paste0("on ", format(et, format="%A%e %b %Y!"))
-                          }
                           tags$li(
-                            "Killed", tags$b(kill$target), "with", tags$b(kill$item), "-", tags$b(kill$location), " at ",
-                            format(et, format = "%R %Z"), ex_date
+                            "Killed", tags$b(kill$target), "with", tags$b(kill$item), "-", tags$b(kill$location),
+                            pretty_timestamp(kill$execution_time)
                           )
                         })
           )
@@ -568,7 +537,10 @@ GameState <- R6::R6Class(
           NROW(collect(self$contracts)) == 0) {
         return("awaiting")
       }
-      return("in progress")
+      if (sum(pull(self$contracts, active)) > 1 && as.POSIXct(pull(self$details, deadline)) > lubridate::now()) {
+        return("in progress")
+      }
+      return("finished")
     }
 
   )

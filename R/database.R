@@ -27,7 +27,9 @@ create_database <- function(conn = db_conn()) {
       name = character(),
       active = logical(),
       win_condition = character(),
-      population_method = character()
+      population_method = character(),
+      started_at = lubridate::POSIXct(),
+      deadline = lubridate::POSIXct()
     ) |>
       dbWriteTable(
         conn = conn,
