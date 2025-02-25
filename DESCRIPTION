@@ -28,6 +28,7 @@ Imports:
     shiny,
     shinyalert,
     shinyDatetimePickers,
+    shinydisconnect,
     shinyjs,
     sqids,
     stringr,

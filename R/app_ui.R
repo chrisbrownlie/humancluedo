@@ -10,7 +10,9 @@ app_ui <- function() {
     gap = "10px",
     padding = 10,
     tags$header(shinyjs::useShinyjs(),
-
+                shinydisconnect::disconnectMessage(
+                  "App disconnected, please refresh the page."
+                ),
                 tags$link(href = "timeline.css", rel = "stylesheet", type = "text/css")),
     # Created new game card
     card(
