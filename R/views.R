@@ -129,7 +129,8 @@ update_game_link <- function(state) {
       p("Share the URL to invite people to this game, or use the",
         "button below to share on Whatsapp.",
         "Note that anyone who has the link can join!",
-        class = "p-2"),
+        class = "p-2",
+        id = "share_link_text"),
       tags$a(
         bsicons::bs_icon("whatsapp",
                          class = "fs-1 mb-3 ms-3 text-green"),
@@ -187,8 +188,6 @@ launch_a_game <- function(game_state, existing_cookie, game_id = NULL) {
     update_game_status_ui(game_state)
   }
 
-  # Update query string
-  shinyjs::runjs("window.history.replaceState(null, null, 'testing')")
-  shinyjs::runjs("parent.document.defaultView.history.replaceState(null, null, 'testing')")
-  #updateQueryString(paste0("?game=", game_id), mode = "replace")
+  # Update URL everywhere
+  update_game_url(game_state)
 }
