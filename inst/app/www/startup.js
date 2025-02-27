@@ -4,8 +4,8 @@ $(document).on('shiny:connected', function(event) {
 
   // Create link for setting favicon in the browser
   var link = parent.document.createElement('link');
-  link.rel = 'shortcut icon'
-  link.href = src + 'favicon.svg'
+  link.rel = 'shortcut icon';
+  link.href = src + 'favicon.svg';
 
   // Append link to the head of the document containing the iframe
   parent.document.getElementsByTagName('head')[0].appendChild(link);
