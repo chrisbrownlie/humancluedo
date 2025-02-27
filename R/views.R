@@ -188,5 +188,7 @@ launch_a_game <- function(game_state, existing_cookie, game_id = NULL) {
   }
 
   # Update query string
-  updateQueryString(paste0("?game=", game_id), mode = "replace")
+  shinyjs::runjs("window.history.replaceState(null, null, 'testing')")
+  shinyjs::runjs("parent.document.defaultView.history.replaceState(null, null, 'testing')")
+  #updateQueryString(paste0("?game=", game_id), mode = "replace")
 }

@@ -213,6 +213,16 @@ app_server <- function(input, output, session) {
     tl
   })
 
+  # Minimum of two players
+  observe({
+    req(input$players)
+    if (length(csl_to_vec(input$players)) < 2) {
+      shinyjs::disable("create_new")
+    } else {
+      shinyjs::enable("create_new")
+    }
+  })
+
   observe({
     # Create the game (in the DB)
     removeModal()
