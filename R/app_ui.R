@@ -13,6 +13,11 @@ app_ui <- function() {
                 shinydisconnect::disconnectMessage(
                   "App disconnected, please refresh the page."
                 ),
+                tags$script(src = "startup.js"),
+                tags$link(
+                  rel = "shortcut icon",
+                  href = "favicon.svg"
+                ),
                 tags$link(href = "timeline.css", rel = "stylesheet", type = "text/css")),
     # Created new game card
     card(
@@ -31,6 +36,11 @@ app_ui <- function() {
       p(id = "game_performance"),
       actionButton("confirm_kill", "Confirm kill!",
                    class = "w-50 align-self-center"),
+      p("Share the URL to invite people to this game, or use the",
+        "button below to share on Whatsapp.",
+        "Note that anyone who has the link can join!",
+        class = "p-2",
+        id = "share_link_text"),
       tags$a(bsicons::bs_icon("whatsapp"),
              id = "whatsapp_link")
     ) |>

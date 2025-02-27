@@ -15,7 +15,8 @@ update_game_url <- function(state) {
   insertUI("#share_link_text",
            where = "afterEnd",
            ui = tags$a(
-             paste0("apps.chrisbrownlie.com/app/", query_to_append),
-             href = paste0("https://apps.chrisbrownlie.com/app/", query_to_append)
+             paste0("https://apps.chrisbrownlie.com/app/", query_to_append),
+             href = paste0("https://apps.chrisbrownlie.com/app/", query_to_append),
+             id = "game_share_link"
            ))
 }

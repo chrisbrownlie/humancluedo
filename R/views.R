@@ -37,6 +37,7 @@ update_player_status <- function(state) {
           "see your contract appear here."),
         p("These are the other players in your game:"),
         tags$ul(
+          class = "list-unstyled",
           purrr::map2(
             players$player[players$player != state$active_player_name],
             players$identifier[players$player != state$active_player_name],
@@ -112,7 +113,11 @@ update_game_link <- function(state) {
 
   # Can hide share link when game has started and all players have joined
   if (state$get_game_status() == "in progress" &&
-      sum(is.na(pull(state$players, identifier))) == 0) return(invisible(NULL))
+      sum(is.na(pull(state$players, identifier))) == 0) {
+    shiny::removeUI("#share_link_text")
+    shiny::removeUI("#game_share_link")
+    return(invisible(NULL))
+  }
 
   link_text <- paste0(
     "Join my game of Human Cluedo - '",
@@ -126,11 +131,6 @@ update_game_link <- function(state) {
     "#game_status",
     where = "beforeEnd",
     tags$div(
-      p("Share the URL to invite people to this game, or use the",
-        "button below to share on Whatsapp.",
-        "Note that anyone who has the link can join!",
-        class = "p-2",
-        id = "share_link_text"),
       tags$a(
         bsicons::bs_icon("whatsapp",
                          class = "fs-1 mb-3 ms-3 text-green"),
