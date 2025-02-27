@@ -1,6 +1,6 @@
 update_game_url <- function(state) {
 
-  query_to_append <- paste0("humancluedo/?game=", state$active_game)
+  query_to_append <- paste0("?game=", state$active_game)
 
   # Update query string for running locally
   #shinyjs::runjs(paste0("window.history.replaceState(null, null, '",
@@ -15,8 +15,8 @@ update_game_url <- function(state) {
   insertUI("#share_link_text",
            where = "afterEnd",
            ui = tags$a(
-             paste0("https://apps.chrisbrownlie.com/app/", query_to_append),
-             href = paste0("https://apps.chrisbrownlie.com/app/", query_to_append),
+             paste0("https://apps.chrisbrownlie.com/app/humancluedo/", query_to_append),
+             href = paste0("https://apps.chrisbrownlie.com/app/humancluedo/", query_to_append),
              id = "game_share_link"
            ))
 }
