@@ -135,7 +135,7 @@ update_game_link <- function(state) {
         bsicons::bs_icon("whatsapp",
                          class = "fs-1 mb-3 ms-3 text-green"),
         href = paste0(
-          "https://api.whatsapp.com/send?text=",
+          "https://wa.me/?text=",
           link_text
         )
       ),
