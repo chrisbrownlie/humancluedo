@@ -137,7 +137,8 @@ update_game_link <- function(state) {
         href = paste0(
           "https://wa.me/?text=",
           link_text
-        )
+        ),
+        target = "_blank"
       ),
       id = "whatsapp_link",
     )
